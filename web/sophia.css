@@ -1,0 +1,48 @@
+.modal-overlay ul {
+    list-style: none; /* Remove default bullet points */
+    margin: 0;
+    padding: 0;
+}
+
+.modal-overlay li {
+    padding: 10px 15px;       /* Comfortable spacing for mobile */
+    border-bottom: 1px solid #eaeaea; /* Light divider between sections */
+}
+
+.modal-overlay li:last-child {
+    border-bottom: none;      /* Remove divider on the last item */
+}
+
+.modal-overlay label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 16px;
+}
+
+/* Style common form elements for a mobile-friendly experience */
+.modal-overlay input[type="text"],
+.modal-overlay input[type="email"],
+.modal-overlay input[type="number"],
+.modal-overlay select,
+.modal-overlay textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+    margin-bottom: 5px;
+}
+
+/* Focus state for accessibility and better UX */
+.modal-overlay input[type="text"]:focus,
+.modal-overlay input[type="email"]:focus,
+.modal-overlay input[type="number"]:focus,
+.modal-overlay select:focus,
+.modal-overlay textarea:focus {
+    outline: none;
+    border-color: #007BFF;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}

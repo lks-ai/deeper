@@ -1,0 +1,183 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  font-size: 1.2em;
+  border: 2px solid rgba(128, 128, 128, 0.7);
+  padding: 0.3em;
+  border-radius: 3px;
+}
+
+.right {
+  float: right;
+}
+
+#treeHierarchy {
+  position: relative;
+  padding: 20px;
+  overflow: hidden; /* Keep absolutely positioned children contained */
+}
+
+/* Background image layer for current node (if image_url is set) */
+#bgImage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  z-index: -1;
+}
+
+#svgOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#breadcrumbRow, #childrenRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 10px;
+  scroll-behavior: smooth;
+}
+
+.breadcrumb-item {
+  padding: 10px 15px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.breadcrumb-item.active {
+  border-color: #28a745;
+  font-weight: bold;
+}
+
+#childrenRow {
+  margin-top: 30px;
+  gap: 20px;
+}
+
+.node-card {
+  padding: 15px;
+  border: 2px solid #007bff;
+  border-radius: 8px;
+  background-color: #fff;
+  min-width: 100px;
+  text-align: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#nodeEditor {
+  margin-top: 30px;
+  border-top: 1px solid #ccc;
+  padding-top: 20px;
+}
+
+/* Editor form / view */
+#nodeEditor label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+#nodeEditor input[type="text"],
+#nodeEditor textarea,
+#nodeEditor div[contenteditable="true"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 1.3em;
+}
+
+#prompt-history {
+  margin-left: 4em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 30%;
+  font-size: 1.2em;
+}
+
+.node-title {
+  font-size: 1.5em;
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Metadata styling */
+#metadataSection {
+  margin-top: 20px;
+}
+
+#metadataList {
+  list-style: none;
+  padding: 0;
+}
+
+#metadataList li {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#metadataList input[type="text"] {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.metadata-remove-btn {
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Toolbar button styling */
+.toolbar-btn {
+  background-color: rgba(128, 128, 128, 0.35);
+  border: none;
+  cursor: pointer;
+  margin-left: 5px;
+  font-size: 18px;
+  float: right;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .node-card {
+    min-width: 80px;
+  }
+}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Ensure mobile responsiveness -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sophia: Tree-of-Thought Editor</title>
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="markdown.css">
+  <link rel="stylesheet" href="hierarchy.css">
+  <link rel="stylesheet" href="sophia.css">
+</head>
+<body>
+  <div id="canvas">
+    <div id="treeHierarchy">
+      <!-- Background image layer (if the current node has an image_url) -->
+      <div id="bgImage"></div>
+      <!-- SVG overlay for drawing connectors -->
+      <svg id="svgOverlay"></svg>
+      <!-- Breadcrumb trail -->
+      <div id="breadcrumbRow"></div>
+      <!-- Row of child nodes -->
+      <div id="childrenRow"></div>
+      <!-- Node viewer/editor panel -->
+      <div id="nodeEditor"></div>
+    </div>
+  </div>
+  <!-- The core hierarchy editor code -->
+  <script src="hierarchy.js"></script>
+  <!-- Markdown to HTML library -->
+  <script src="markdown.js"></script>
+  
+  <!-- Load Sophia -->
+  <script src="sophia.js"></script>
+</body>
+</html>

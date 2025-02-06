@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Markdown Demo</title>
+    <link rel="stylesheet" href="markdown.css">
+  </head>
+  <body class="markdown">
+    <div id="content"></div>
+
+    <script src="markdown.js"></script>
+    <script>
+      // Your sample markdown text (including LaTeX)
+      var mdText = `
+The Schrödinger equation is a fundamental equation in quantum mechanics that describes how the quantum state of a physical system changes over time. It is typically written as:
+
+\\[ i\\hbar \\frac{\\partial}{\\partial t} \\Psi(\\mathbf{r}, t) = \\hat{H} \\Psi(\\mathbf{r}, t) \\]
+
+Here, \\( \\Psi(\\mathbf{r}, t) \\) is the wave function, which contains all the information about the quantum state of the system. The wave function is a complex-valued function that, when squared, gives the probability density of finding a particle at a given position and time.
+
+The term \\( \\hat{H} \\) is the **Hamiltonian operator**, which represents the total energy of the system. It includes kinetic and potential energy terms. The symbol **\\( i \\)** is the imaginary unit, and \\( \\hbar \\) (**h-bar**) is the reduced Planck's constant.
+
+The Schrödinger equation tells us that the time evolution of the wave function is determined by the Hamiltonian. This equation is crucial because it allows us to calculate the probabilities of different outcomes in quantum experiments and predict the behavior of particles at the quantum level.
+      `;
+
+      // Optionally, decorate bold text with extra HTML (for example, wrap in a link)
+      var options = {
+        // Either provide a function:
+        // boldReplacer: function(text) { return '<a href="#">' + '<strong>' + text + '</strong>' + '</a>'; }
+        // Or use prefix/suffix:
+        boldPrefix: '<a href="#">',
+        boldSuffix: '</a>'
+      };
+
+      var html = Markdown.render(mdText, options);
+      document.getElementById('content').innerHTML = html;
+    </script>
+  </body>
+</html>

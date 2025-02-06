@@ -1,0 +1,11 @@
+# Respond
+Respond concisely based on the conclusions from thoughts. Use markdown formatting and put any important topics or subjects in bold.
+
+<reply>
+{response(320, 0.0)}
+
+</reply>
+
+## Label this Knowledge
+Final Step. Based on the user request and the reply, come up with a short yet specific label for this knowledge. keep it to below 5 words:
+- Knowledge Label: {label(8, 0.0)}

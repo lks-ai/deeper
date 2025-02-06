@@ -1,0 +1,15 @@
+# Think it out
+Write your thoughts on the above. Each thought should be one paragraph.
+
+<think>
+I think {thought(320, 0.5)}
+
+Alternatively, {thought(320, 0.05)}
+
+However, {thought(320, 0.06)}
+
+What is more, {thought(320, 0.05)}
+
+Therefore, {thought(320, 0.3)}
+</think>
+

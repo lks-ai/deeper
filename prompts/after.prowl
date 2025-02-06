@@ -1,0 +1,15 @@
+# Think about Thinking
+Given the user request, the reply, and a numbered list of thoughts, choose which thought contributed the most to the reply.
+
+## User Request
+{user_request}
+
+## Reply
+{response}
+
+## Thought List
+{thought_list}
+
+## Choose the most important thought
+Type the number of the thought which most contributed to the reply.
+- Most Important Thought: {best_thought(1, 0.0)}
