@@ -1,3 +1,6 @@
+//Sophia: (Deepr.wiki)
+// github.com/lks-ai/deeper
+
 // This script initializes some example node types.
 // It should be loaded after hierarchy.js and after the DOM is ready.
 
@@ -99,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Extra toolbar buttons
   window.hierarchyEditor.addToolbarButton("☰", (currentNode) => {
     showModal(`
-        <h2>Options<br><small>${currentNode.name}</small></h2>
+        <h2>Branch Options<br><small>${currentNode.name}</small></h2>
         <ul>
             <li>
               <label>Save</label><br><input type="text" id="save-name" value="${sophia.treeName}" placeholder="Tree Name">

@@ -1,3 +1,6 @@
+# Sophia (Deepr.wiki) API server
+# github.com/lks-ai/deeper
+
 import json
 from os import listdir
 from os.path import isfile, join
@@ -82,6 +85,12 @@ async def load_endpoint(name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+from fastapi.staticfiles import StaticFiles
+
+# Mount the "web" directory at the root.
+# Endpoints defined above will override these routes.
+app.mount("/", StaticFiles(directory="web", html=True), name="static")
+
 
 # For local testing: run `python main.py` or `uvicorn main:app --host 0.0.0.0 --port 8123`
 if __name__ == "__main__":
