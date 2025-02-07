@@ -4,7 +4,7 @@
 // This script initializes some example node types.
 // It should be loaded after hierarchy.js and after the DOM is ready.
 
-const HOST = 'http://deepr.wiki';
+const HOST = window.location.protocol + "//" + window.location.host;
 
 /* Modal utility function */
 function showModal(contentHtml) {
@@ -271,6 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
         hierarchyEditor.childrenRow.scrollBy(1024, 0);
       }, 0);
+      window.scrollTo(0, 0);
     })
     .catch(error => {
       console.log(`Error: ${error}`);

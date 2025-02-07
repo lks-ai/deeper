@@ -19,3 +19,11 @@ PROWL_MODEL=qwen/qwen-2.5-7b-instruct
 # This is for using hosted services that require an API key
 PROWL_VENDOR_API_KEY= ... put your key ...
 ```
+
+## TODO
+- Swipe left and right: swipe through peers, or if all the way left, swipe to parent
+- Select which model to run and which endpoint to point to
+- Control the System prompt within the interface
+- Hash based navigation (browser history plus UX control URL<->UX)
+- Download tree files
+- User accounts and folders
