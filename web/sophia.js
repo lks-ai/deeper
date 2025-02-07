@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <ul>
             <li>
               <label>Save</label><br><input type="text" id="save-name" value="${sophia.treeName}" placeholder="Tree Name">
-              <div><button onclick="sophia.saveData(document.getElementById('save-name').value)">Save</button></div>
+              <div><button onclick="sophia.saveData(document.getElementById('save-name').value); hideModal();">Save</button></div>
             </li>
             <li>
               <label>Load</label><br><select id="load-select"><option value="">Select a tree...</option>${sophia.compileTreeSelect()}</select>

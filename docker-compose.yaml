@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./data:/app/data
+      - ./prompts:/app/prompts
+    environment:
+      # You can set additional environment variables here if needed.
+      - SOME_ENV_VAR=example

@@ -11,13 +11,16 @@ app = FastAPI()
 
 """
 Today:
-    loading and saving
-    prompt history
+    -*loading and saving
+    - prompt history
+        add to the saved data!
     drag & drop
     docker setup
-    copy
+    hash based navigation - for node ids
+        in server side, node id can be overwritten with uuid for uniqueness when saving
+    copy/paste/duplicate branch
     mouse scrolling on nav rows = horizontal scroll up and down
-    nicer markdown styling + check table formatting and other pieces
+    - nicer markdown styling + check table formatting and other pieces
     templates for prowl scripts
         prompts / {template_name} / ...
         prompts/default will load first in stack, then the template name if used

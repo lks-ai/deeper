@@ -173,6 +173,7 @@ button {
   margin-left: 5px;
   font-size: 18px;
   float: right;
+  width: 2em;
 }
 
 /* Responsive tweaks */
