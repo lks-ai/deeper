@@ -5,7 +5,15 @@ Original Repo: [lks-ai/deeper](https://github.com/lks-ai/deeper)
 
 **[Online Demo (Please behave)](http://deepr.wiki)**
 
+## Benefits
+- Great for study and research
+- Makes knowledge easily portable and navegable
+- Saves lots of time
+- Enjoy privacy in a closed network
+
 ## Features
+- Runs fully locally
+- Make full trees of any type of content
 - Easy to use intuitive and **mobile friendly** interface
 - Use any LLM, Deepr adds **advanced reasoning capabilities** to it
 - Preset to use OpenRouter but can use any OpenAI compatible endpoints

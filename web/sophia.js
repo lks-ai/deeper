@@ -281,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.saveData = function(name, globalScope=false){
     if (name.length == 0) return;
     const data = {name: name, data: hierarchyEditor.toJson(!globalScope ? hierarchyEditor.getCurrentNode(): null)};
-    fetch('${HOST}/save', {
+    fetch(`${HOST}/save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
