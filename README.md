@@ -3,6 +3,8 @@
 
 Original Repo: [lks-ai/deeper](https://github.com/lks-ai/deeper)
 
+**[Online Demo (Please behave)](http://deepr.wiki)**
+
 ## Features
 - Easy to use intuitive and **mobile friendly** interface
 - Use any LLM, Deepr adds **advanced reasoning capabilities** to it
