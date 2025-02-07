@@ -4,6 +4,8 @@
 // This script initializes some example node types.
 // It should be loaded after hierarchy.js and after the DOM is ready.
 
+const HOST = 'http://deepr.wiki';
+
 /* Modal utility function */
 function showModal(contentHtml) {
     // Create the overlay that covers the full page
@@ -199,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   sophia.compileTreeSelect = async function(){
     try {
-      const response = await fetch(`http://localhost:8123/list`);
+      const response = await fetch(`${HOST}/list`);
       if (!response.ok) {
         throw new Error(`Error fetching data: ${response.status}`);
       }
@@ -244,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hierarchyEditor.childrenRow.scrollBy(10024, 0);
       }, 0);
   
-    fetch('http://localhost:8123/think', {
+    fetch('${HOST}/think', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -278,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.saveData = function(name, globalScope=false){
     if (name.length == 0) return;
     const data = {name: name, data: hierarchyEditor.toJson(!globalScope ? hierarchyEditor.getCurrentNode(): null)};
-    fetch('http://localhost:8123/save', {
+    fetch('${HOST}/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -295,9 +297,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   sophia.loadData = async function(name, globalScope=false){
-    //return fetch(`http://localhost:8123/load/${encodeURIComponent(name)}`)
+    //return fetch(`${HOST}/load/${encodeURIComponent(name)}`)
     try {
-      const response = await fetch(`http://localhost:8123/load/${encodeURIComponent(name)}`);
+      const response = await fetch(`${HOST}/load/${encodeURIComponent(name)}`);
       if (!response.ok) {
         throw new Error(`Error fetching data: ${response.status}`);
       }
