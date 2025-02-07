@@ -106,13 +106,16 @@ document.addEventListener("DOMContentLoaded", () => {
         <ul>
             <li>
               <label>Save</label><br><input type="text" id="save-name" value="${sophia.treeName}" placeholder="Tree Name">
-              <div><button onclick="sophia.saveData(document.getElementById('save-name').value); hideModal();">Save</button></div>
+              <div>
+                <button onclick="sophia.saveData(document.getElementById('save-name').value); hideModal();" title="Saves currently selected branch as a tree">Save Branch</button> &nbsp;
+                <button onclick="sophia.saveData(document.getElementById('save-name').value, true); hideModal();" title="Saves entire tree">Save Root</button>
+              </div>
             </li>
             <li>
               <label>Load</label><br><select id="load-select"><option value="">Select a tree...</option>${sophia.compileTreeSelect()}</select>
               <div>
-                <button onclick="sophia.loadData(document.getElementById('load-select').value); hideModal();">Load</button> &nbsp;
-                <button onclick="sophia.loadData(document.getElementById('load-select').value, true); hideModal();">Load as Root</button>
+                <button onclick="sophia.loadData(document.getElementById('load-select').value); hideModal();" title="Load to a sub-branch of current branch">Load to Branch</button> &nbsp;
+                <button onclick="sophia.loadData(document.getElementById('load-select').value, true); hideModal();" title="Load as entire tree">Load to Root</button>
               </div>
             </li>
         </ul>
@@ -172,7 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
     o.push('## Conversation History')
     for (let i = 0; i < n; i++){
         let v = l[off + i];
-        o.push("--- User:\n" + v.metadata.user_request + "\n\n--- Expert:\n" + v.metadata.response);
+        if (v.metadata.hasOwnProperty('user_request')){
+          o.push(`--- User:\n${v.metadata.user_request}\n\n--- Expert: ${v.name}\n${v.metadata.response}`);
+        }else{
+          o.push(`--- Content: ${v.name}\n${v.body}`);
+        }
     }
     o.push('## Current User Request');
     return o.join("\n\n") + "\n\n";
@@ -296,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const data = await response.json();
       hierarchyEditor.fromJson(data, !globalScope ? hierarchyEditor.getCurrentNode(): null);
+      sophia.treeName = name;
       setTimeout(function(){
         hierarchyEditor.render();
       }, 0);

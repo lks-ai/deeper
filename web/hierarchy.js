@@ -396,6 +396,7 @@
         nameInput.addEventListener("input", () => {
           currentNode.name = nameInput.value;
           this.renderBreadcrumb();
+          this.updateConnections();
         });
         viewerContainer.appendChild(nameInput);
   
