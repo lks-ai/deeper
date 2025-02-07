@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hierarchyEditor.childrenRow.scrollBy(10024, 0);
       }, 0);
   
-    fetch('${HOST}/think', {
+    fetch(`${HOST}/think`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
