@@ -8,3 +8,5 @@
 - Save and Load your Trees / Branches
 - Easily repeat prompts with the prompt history
 
+## Setup
+Make sure you have your environment variables set up properly
