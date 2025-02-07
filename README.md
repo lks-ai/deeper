@@ -29,3 +29,7 @@ PROWL_VENDOR_API_KEY= ... put your key ...
 - Hash based navigation (browser history plus UX control URL<->UX)
 - Download tree files
 - User accounts and folders
+- Node naming based on links
+- Remapping links back to existing nodes as hrefs
+- Multilinguality
+- Multimodality with Drag & Drop
