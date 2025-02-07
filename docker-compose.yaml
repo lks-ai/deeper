@@ -8,6 +8,5 @@ services:
     volumes:
       - ./data:/app/data
       - ./prompts:/app/prompts
-    environment:
-      # You can set additional environment variables here if needed.
-      - SOME_ENV_VAR=example
+    env_file:
+      - .env

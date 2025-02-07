@@ -46,3 +46,13 @@
     border-color: #007BFF;
     box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
+
+#prompt-history {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 30%;
+    font-size: 1.2em;
+}
+  
+  

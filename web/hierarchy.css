@@ -119,15 +119,6 @@ button {
   font-size: 1.3em;
 }
 
-#prompt-history {
-  margin-left: 4em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 30%;
-  font-size: 1.2em;
-}
-
 .node-title {
   font-size: 1.5em;
   background-color: rgba(255, 255, 255, 0.25);

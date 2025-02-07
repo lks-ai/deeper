@@ -1,99 +1,98 @@
 /* markdown.css – Default styles for the Markdown output */
 
 .markdown {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    padding: 0 1em;
-  }
-  
-  /* Headings */
-  .markdown h1,
-  .markdown h2,
-  .markdown h3,
-  .markdown h4,
-  .markdown h5,
-  .markdown h6 {
-    margin-top: 1em;
-    margin-bottom: 0.5em;
-    font-weight: bold;
-    line-height: 1.25;
-  }
-  
-  /* Paragraphs */
-  .markdown p {
-    margin: 1em 0;
-  }
-  
-  /* Code */
-  .markdown code {
-    background-color: #f8f8f8;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-  }
-  
-  /* Code blocks */
-  .markdown pre {
-    background-color: #f8f8f8;
-    padding: 1em;
-    overflow: auto;
-    border-radius: 3px;
-  }
-  
-  /* Blockquotes */
-  .markdown blockquote {
-    border-left: 4px solid #ccc;
-    margin: 1em 0;
-    padding-left: 1em;
-    color: #666;
-  }
-  
-  /* Lists */
-  .markdown ul,
-  .markdown ol {
-    margin: 1em 0;
-    padding-left: 2em;
-  }
-  
-  /* Tables */
-  .markdown table {
-    border-collapse: collapse;
-    margin: 1em 0;
-    width: 100%;
-  }
-  
-  .markdown th,
-  .markdown td {
-    border: 1px solid #ddd;
-    padding: 0.5em;
-  }
-  
-  .markdown th {
-    background-color: #f0f0f0;
-  }
-  
-  /* Horizontal rule */
-  .markdown hr {
-    border: none;
-    border-top: 1px solid #ccc;
-    margin: 2em 0;
-  }
-  
-  /* LaTeX styling */
-  .markdown .math-inline {
-    font-style: italic;
-    color: #003366;
-    padding: 0 0.2em;
-    background-color: #f0f8ff;
-  }
-  
-  .markdown .math-display {
-    text-align: center;
-    margin: 1em 0;
-    font-style: italic;
-    color: #003366;
-    background-color: #f0f8ff;
-    padding: 0.5em;
-  }
-  
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  padding: 0 1em;
+}
+
+/* Headings */
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: bold;
+  line-height: 1.25;
+}
+
+/* Paragraphs */
+.markdown p {
+  margin: 1em 0;
+}
+
+/* Code */
+.markdown code {
+  background-color: #f8f8f8;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+}
+
+/* Code blocks */
+.markdown pre {
+  background-color: #f8f8f8;
+  padding: 1em;
+  overflow: auto;
+  border-radius: 3px;
+}
+
+/* Blockquotes */
+.markdown blockquote {
+  border-left: 4px solid #ccc;
+  margin: 1em 0;
+  padding-left: 1em;
+  color: #666;
+}
+
+/* Lists */
+.markdown ul,
+.markdown ol {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+/* Tables */
+.markdown table {
+  border-collapse: collapse;
+  margin: 1em 0;
+  width: 100%;
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid #ddd;
+  padding: 0.5em;
+}
+
+.markdown th {
+  background-color: #f0f0f0;
+}
+
+/* Horizontal rule */
+.markdown hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 2em 0;
+}
+
+/* LaTeX styling */
+.markdown .math-inline {
+  font-style: italic;
+  color: #003366;
+  padding: 0 0.2em;
+  background-color: #f0f8ff;
+}
+
+.markdown .math-display {
+  text-align: center;
+  margin: 1em 0;
+  font-style: italic;
+  color: #003366;
+  background-color: #f0f8ff;
+  padding: 0.5em;
+}
