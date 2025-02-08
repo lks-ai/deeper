@@ -31,13 +31,17 @@ PROWL_VENDOR_API_KEY= ... put your key ...
 ```
 
 ## TODO
-- Swipe left and right: swipe through peers, or if all the way left, swipe to parent
+- Swipe left and right: swipe through peers, or if all the way left, swipe to parent, all the way right on breadcrumb? swipe to first child
 - Select which model to run and which endpoint to point to
 - Control the System prompt within the interface
 - Hash based navigation (browser history plus UX control URL<->UX)
+- Nodes should have UUIDs
 - Download tree files
 - User accounts and folders
 - Node naming based on links
 - Remapping links back to existing nodes as hrefs
 - Multilinguality
 - Multimodality with Drag & Drop
+- Code block cleanup
+- Copy function for code blocks and full message markdown
+- Fix prompt history selection on mobile

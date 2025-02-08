@@ -10,7 +10,40 @@
 
       return Markdown.render(mdText, options);
     }
-  
+
+    class Nav {
+        setHash(hash) {
+            if (history.pushState) {
+                history.pushState(null, null, `#${hash}`);
+            } else {
+                location.hash = `#${hash}`;
+            }
+        }
+        
+        goHash(hash, scroll=true) {
+            // Navigate to the given hash
+            // Should be used in HierarchyEditor to go show a specific node
+            return;
+        }
+        
+        getId() {
+            // Generate a UUID v4 compatible hash for content Ids
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+            
+            // Insert hyphens in the correct positions
+            return [
+                hex.substr(0, 8),
+                hex.substr(8, 4),
+                '4',
+                hex.substr(12, 3),
+                hex.substr(15, 4),
+                'b',
+                hex.substr(19, 12)
+            ].join('-');
+        }
+    }
+    window.nav = new Nav();
     /**
      * HierarchyEditor manages the tree data, its rendering, and provides a programmatic API.
      * New features:
@@ -202,6 +235,7 @@
         this.renderChildren();
         this.renderNodeEditor();
         this.updateConnections();
+        window.nav.setHash(currentNode.id);
       }
   
       renderBreadcrumb() {
@@ -664,11 +698,40 @@
         }
         return null;
       }
-  
+      _findPathToNode(node, id) {
+        if (node.id === id) {
+          return [node];
+        }
+        for (let child of node.children) {
+          let result = this._findPathToNode(child, id);
+          if (result) {
+            return [node, ...result];
+          }
+        }
+        return null;
+      }
+    
+      /**
+       * Navigates the hierarchy so that the current focus path is updated to the path
+       * from the root to the node with the specified id. If the node is found, the UI is
+       * re-rendered.
+       *
+       * @param {string} id - The id of the node to navigate to.
+       */
+      navigateToNodeById(id, currentNode=null) {
+        const path = this._findPathToNode(currentNode ? currentNode: this.treeData, id);
+        if (path) {
+          this.currentFocusPath = path;
+          this.render();
+        } else {
+          console.error(`Node with id "${id}" not found.`);
+        }
+      }
+      
       // Create a new node. (Each node now has a "type" and an "image_url" property.)
       createNode(content = "New Node", parent = null) {
         return {
-          id: "node-" + (this.nodeIdCounter++),
+          id: window.nav.getId(), //"node-" + (this.nodeIdCounter++),
           content: content,   // legacy text content
           name: content,      // display name (may be markdown formatted)
           body: "",           // rich content body (markdown supported)
@@ -700,5 +763,6 @@
       });
     });
     window.HierarchyEditor = HierarchyEditor;
+    window.Nav = Nav;
   })();
   

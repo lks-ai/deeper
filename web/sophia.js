@@ -6,7 +6,8 @@
 
 const HOST = window.location.protocol + "//" + window.location.host;
 
-/* Modal utility function */
+/* Utility functions */
+
 function showModal(contentHtml) {
     // Create the overlay that covers the full page
     const overlay = document.createElement("div");
@@ -156,12 +157,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // Either provide a function:
     // boldReplacer: function(text) { return '<a href="#">' + '<strong>' + text + '</strong>' + '</a>'; }
     // Or use prefix/suffix:
-    boldReplacer: function(text){ return '<a href="#" onclick="window.sophia.send(\'n/a\', \'extrapolate about ' + text + '\', createChild=true)">' + text + '</a>';},
+    boldReplacer: function(text){ 
+      let node = hierarchyEditor.getCurrentNode();
+      return `<a href="javascript:void(0)" onclick="window.sophia.send('${node.id}', 'expand ${text}', createChild=true, label='${text}')"><strong>${text}</strong></a>`;
+    },
     // boldPrefix: '<a href="#" on>',
     // boldSuffix: '</a>'
   };
-  hierarchyEditor.treeData.name = "Begin";
-  hierarchyEditor.treeData.body = "*Begin the conversation by sending a message*";
+  hierarchyEditor.treeData.name = "DeepR.wiki";
+  hierarchyEditor.treeData.id = window.nav.getId();
+  hierarchyEditor.treeData.body = "*Begin the conversation by sending a message about the root topic*";
 
   /*
   Sophia client stuff
@@ -178,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < n; i++){
         let v = l[off + i];
         if (v.metadata.hasOwnProperty('user_request')){
-          o.push(`--- User:\n${v.metadata.user_request}\n\n--- Expert: ${v.name}\n${v.metadata.response}`);
+          o.push(`--- User:\n${v.metadata.user_request || ""}\n\n--- Expert: ${v.name}\n${v.body}`);
         }else{
           o.push(`--- Content: ${v.name}\n${v.body}`);
         }
@@ -225,27 +230,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  sophia.send = function(nodeId, prompt, createChild=false) {
+  sophia.send = function(nodeId, prompt, createChild=false, label=null) {
+    // Set up prompt
     let history = sophia.compileContext(maxLevels=5, onChild=createChild);
     sophia.promptHistory.push(prompt);
     const data = {
       prompt: history + prompt
     };
+
+    // Pre-fetch interface setup
     let targetNode = null;
+    let parentNode = hierarchyEditor.getCurrentNode();
     if (!createChild){
-      targetNode = hierarchyEditor.getCurrentNode();
+      targetNode = parentNode;
       targetNode.name = "Thinking...";
     }else{
-      let parentNode = hierarchyEditor.getCurrentNode();
       targetNode = hierarchyEditor.createNode("Thinking...", parentNode);
       parentNode.children.push(targetNode);
+      // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
+      if (label){
+        parentNode.body = parentNode.body.replaceAll(`**${label}**`, `[${label}](#${targetNode.id})`);
+      }
     }
     setTimeout(function(){
         hierarchyEditor.render();
         hierarchyEditor.breadcrumbRow.scrollBy(10024, 0);
         hierarchyEditor.childrenRow.scrollBy(10024, 0);
       }, 0);
-  
+
+    // TODO Store the `label` in sophia.index for lookup and link overwrite?
+    //  or use a way to link to the replies
+    //  maps {label: nodeId}
+
+    // Perform the fetch
     fetch(`${HOST}/think`, {
       method: 'POST',
       headers: {
@@ -258,10 +275,9 @@ document.addEventListener("DOMContentLoaded", () => {
       var response = result.response;
       var thoughts = result.thought;
       var request = result.user_request;
-      console.log(thoughts);
-      console.log(response);
-      //outputEl.textContent = JSON.stringify(result, null, 2);
-      console.log(targetNode);
+      // console.log(thoughts);
+      // console.log(response);
+      // console.log(targetNode);
       let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
       targetNode.metadata = result;
       targetNode.metadata.user_request = prompt;
@@ -299,7 +315,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   sophia.loadData = async function(name, globalScope=false){
-    //return fetch(`${HOST}/load/${encodeURIComponent(name)}`)
     try {
       const response = await fetch(`${HOST}/load/${encodeURIComponent(name)}`);
       if (!response.ok) {
@@ -320,16 +335,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.sophia = sophia;
 
-//   window.hierarchyEditor.addModularSection("mediaBanner", (currentNode) => {
-//     let div = document.createElement("div");
-//     div.style.marginTop = "20px";
-//     div.style.padding = "10px";
-//     div.style.border = "1px dashed #aaa";
-//     div.innerHTML = "<strong>Media Banner:</strong> (This is a placeholder for media content.)";
-//     return div;
-//   });
+  hierarchyEditor.render();
 
-  setTimeout(function(){
-    hierarchyEditor.render();
-  }, 0);
+  // Hash navigation management
+  window.addEventListener('hashchange', function(event) {
+    console.log('The hash has changed!');
+    console.log('Old URL:', event.oldURL);
+    console.log('New URL:', event.newURL);
+    // Navigate the hierarchy to the new node by Id
+    let parts = event.newURL.split('#', 2);
+    hierarchyEditor.navigateToNodeById(parts[1], hierarchyEditor.getCurrentNode());
+  });
+
 });
