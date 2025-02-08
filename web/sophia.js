@@ -130,6 +130,14 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("New node created:", data.node);
   });
 
+  // Register a hook for when a node is removed.
+  window.hierarchyEditor.on("nodeRemoved", (data) => {
+    console.log("Node removed:", data.node);
+    // removes all [label](#uuid) references turning them back to **label**
+    // hierarchyEditor.dereference(data.node);
+    hierarchyEditor.dereference(data.node.id);
+  });
+
   // Register a hook for when the edit form is submitted.
   window.hierarchyEditor.on("editFormSubmitted", (data) => {
     console.log("Edit form submitted for:", data.node);
@@ -253,9 +261,17 @@ document.addEventListener("DOMContentLoaded", () => {
       targetNode = hierarchyEditor.createNode("Thinking...", parentNode);
       parentNode.children.push(targetNode);
       // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
-      if (label){
-        parentNode.body = parentNode.body.replaceAll(`**${label}**`, `[${label}](#${targetNode.id})`);
+      // if (label){
+      //   parentNode.body = parentNode.body.replaceAll(`**${label}**`, `[${label}](#${targetNode.id})`);
+      // }
+      if (label) {
+        hierarchyEditor.queueRewrite(
+          parentNode,
+          `**${label}**`,
+          `[${label}](#${targetNode.id})`
+        );
       }
+      
     }
     setTimeout(function(){
         hierarchyEditor.render();
@@ -277,17 +293,18 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     .then(response => response.json())
     .then(result => {
+      // Change the interface accordingly after receiving result
       var response = result.response;
       var thoughts = result.thought;
       var request = result.user_request;
-      // console.log(thoughts);
-      // console.log(response);
-      // console.log(targetNode);
       let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
+      // Set metadata
       targetNode.metadata = result;
       targetNode.metadata.user_request = prompt;
+      // Set other fields
       targetNode.name = result.label;
       targetNode.body = result.response;
+      // Asynchronously make the interface do stuff
       setTimeout(function(){
         hierarchyEditor.render();
         hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
