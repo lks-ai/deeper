@@ -345,6 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Navigate the hierarchy to the new node by Id
     let parts = event.newURL.split('#', 2);
     hierarchyEditor.navigateToNodeById(parts[1]);
+    hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
   });
 
 });

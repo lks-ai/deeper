@@ -46,3 +46,6 @@ PROWL_VENDOR_API_KEY= ... put your key ...
 - Copy function for code blocks and full message markdown
 - Fix prompt history selection on mobile
 - Fixing HTTPS on the demo
+- Showing multiline metadata properly
+- Some sort of Tree selector for modals
+- Make `Update` button reference the current node's contents and the revision request (so it revises what is already there if something exists)
