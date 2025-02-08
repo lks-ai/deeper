@@ -157,7 +157,8 @@
     // 10. Links: [text](url "optional title")
     text = text.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, function (match, linkText, url, title) {
       var titleAttr = title ? ' title="' + title + '"' : '';
-      return '<a target="_blank" href="' + url + '"' + titleAttr + '>' + linkText + '</a>';
+      var linkTarget = options.linkTarget || '';
+      return '<a' + linkTarget + ' href="' + url + '"' + titleAttr + '>' + linkText + '</a>';
     });
 
     // 11. Images: ![alt text](url "optional title")
