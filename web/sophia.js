@@ -264,6 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log(targetNode);
       let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
       targetNode.metadata = result;
+      targetNode.metadata.user_request = prompt;
       targetNode.name = result.label;
       targetNode.body = result.response;
       setTimeout(function(){
