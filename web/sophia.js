@@ -166,7 +166,11 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   hierarchyEditor.treeData.name = "DeepR.wiki";
   hierarchyEditor.treeData.id = window.nav.getId();
-  hierarchyEditor.treeData.body = "*Begin the conversation by sending a message about the root topic*";
+  hierarchyEditor.treeData.body = `Use thinking AI to quickly build a wiki on anything. Great for research, taxonomies, mind mapping and note taking.
+  [GitHub](https://github.com/lks-ai/deeper) | [By LKS](https://lks.ltd)
+
+  *Begin the conversation by sending a message about the root topic*
+  `;
 
   /*
   Sophia client stuff
