@@ -2,7 +2,7 @@
 Respond concisely based on the conclusions from thoughts. Use markdown formatting and put any important topics or subjects in bold.
 
 <reply>
-{response(320, 0.0)}
+{response(420, 0.0)}
 
 </reply>
 
