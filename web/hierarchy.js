@@ -59,6 +59,8 @@
         if (!this.container) {
           throw new Error("Container element not found");
         }
+        // Basic Config
+        this.title = "Hierarchy";
   
         // Key UI elements.
         this.bgImageDiv    = this.container.querySelector("#bgImage");
@@ -236,6 +238,7 @@
         this.renderNodeEditor();
         this.updateConnections();
         window.nav.setHash(currentNode.id);
+        document.title = `${currentNode.name} - ${this.title}`;
       }
   
       renderBreadcrumb() {

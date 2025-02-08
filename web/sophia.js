@@ -164,6 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // boldPrefix: '<a href="#" on>',
     // boldSuffix: '</a>'
   };
+  hierarchyEditor.title = "DeepR";
   hierarchyEditor.treeData.name = "DeepR.wiki";
   hierarchyEditor.treeData.id = window.nav.getId();
   hierarchyEditor.treeData.body = `Use thinking AI to quickly build a wiki on anything. Great for research, taxonomies, mind mapping and note taking.
