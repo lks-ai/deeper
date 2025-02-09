@@ -21,5 +21,4 @@ async def think(prompt:str, model=None):
     d['thought'] = "\n".join([v['value'] for v in thoughts])
     r:prowl.Return = await stack.run(['output'], prefix=r.completion, model=model, stops=['</reply>'])
     d.update(r.get())
-    print(r.completion)
     return d

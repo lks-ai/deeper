@@ -71,7 +71,41 @@ function showModal(contentHtml) {
 function hideModal(){
     document.getElementById('close-button').click();
 }
-  
+
+// For use when clicking bold links to give it some rizz
+function oneUpEffect(element) {
+  // Get the bounding rectangle of the clicked element.
+  const rect = element.getBoundingClientRect();
+
+  // Clone the element.
+  const clone = element.cloneNode(true);
+
+  // Set up the clone's styles for absolute positioning and animation.
+  clone.style.position = "absolute";
+  clone.style.left = rect.left + "px";
+  clone.style.top = rect.top + "px";
+  clone.style.margin = "0";
+  clone.style.pointerEvents = "none";
+  clone.style.opacity = "1";
+  // Apply a transition for both transform and opacity.
+  clone.style.transition = "transform 0.8s ease-out, opacity 0.8s ease-out";
+
+  // Append the clone to the body.
+  document.body.appendChild(clone);
+
+  // Force reflow so the browser registers the initial styles.
+  void clone.offsetWidth;
+
+  // Animate: move the clone upward and fade it out.
+  clone.style.transform = "translateY(-4em)";
+  clone.style.opacity = "0";
+
+  // Once the animation is complete, remove the clone from the DOM.
+  clone.addEventListener("transitionend", () => {
+    clone.remove();
+  });
+}
+
 
 document.addEventListener("DOMContentLoaded", () => {
     const sophia = {};
@@ -167,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Or use prefix/suffix:
     boldReplacer: function(text){ 
       let node = hierarchyEditor.getCurrentNode();
-      return `<a href="javascript:void(0)" onclick="window.sophia.send('${node.id}', 'expand ${text}', createChild=true, label='${text}')"><strong>${text}</strong></a>`;
+      return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send('${node.id}', 'expand ${text}', createChild=true, label='${text}');"><strong>${text}</strong></a>`;
     },
     // boldPrefix: '<a href="#" on>',
     // boldSuffix: '</a>'

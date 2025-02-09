@@ -49,3 +49,6 @@ PROWL_VENDOR_API_KEY= ... put your key ...
 - Showing multiline metadata properly
 - Some sort of Tree selector for modals
 - Make `Update` button reference the current node's contents and the revision request (so it revises what is already there if something exists)
+- JS based tree diff and maybe tregex?
+- Some form of simplified RAG without too much overhead (ModernBERT?)
+

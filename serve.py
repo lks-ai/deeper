@@ -19,8 +19,9 @@ Today:
         add to the saved data!
     drag & drop
     - docker setup
-    hash based navigation - for node ids
+    - hash based navigation - for node ids
         in server side, node id can be overwritten with uuid for uniqueness when saving
+        make a UUID index which holds all entities that are saved
     copy/paste/duplicate branch
     - mouse scrolling on nav rows = horizontal scroll up and down
     - nicer markdown styling + check table formatting and other pieces
