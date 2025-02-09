@@ -83,7 +83,7 @@ function oneUpEffect(element) {
   // Set up the clone's styles for absolute positioning and animation.
   clone.style.position = "absolute";
   clone.style.left = rect.left + "px";
-  clone.style.top = rect.top + "px";
+  clone.style.top = (rect.top + window.scrollY) + "px";
   clone.style.margin = "0";
   clone.style.pointerEvents = "none";
   clone.style.opacity = "1";
@@ -298,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.send = function(nodeId, prompt, createChild=false, label=null) {
     // Set up prompt
     prompt = trim(prompt, ':*#');
-    let history = sophia.compileContext(maxLevels=5, onChild=createChild);
+    let history = sophia.compileContext(maxLevels=80, onChild=createChild);
     sophia.promptHistory.push(prompt);
     const data = {
       prompt: history + prompt
