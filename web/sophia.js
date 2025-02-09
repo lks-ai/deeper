@@ -106,6 +106,15 @@ function oneUpEffect(element) {
   });
 }
 
+function trim (s, c) {
+  // Trims s (string) of any c (characters) wrapping s
+  if (c === "]") c = "\\]";
+  if (c === "^") c = "\\^";
+  if (c === "\\") c = "\\\\";
+  return s.replace(new RegExp(
+    "^[" + c + "]+|[" + c + "]+$", "g"
+  ), "");
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     const sophia = {};
@@ -223,10 +232,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let l = hierarchyEditor.currentFocusPath;
     let n = l.length < maxLevels ? l.length: maxLevels;
     let off = l.length - n;
-    if (!onChild) n--;
+    let last = l[l.length - 1];
+    if (!onChild) n--; // omit current entry if it an update
     if (n <= 0) return "";
     let o = [];
     o.push('## Conversation History')
+    // Compile the history by entry from [off - n] to off - 1
     for (let i = 0; i < n; i++){
         let v = l[off + i];
         if (v.metadata.hasOwnProperty('user_request')){
@@ -235,7 +246,14 @@ document.addEventListener("DOMContentLoaded", () => {
           o.push(`--- Content: ${v.name}\n${v.body}`);
         }
     }
-    o.push('## Current User Request');
+    // If we are updating, and body.length > 0 then include a block for rewriting the request
+    if (!onChild && last.body.length > 0){
+      let v = last;
+      o.push(`--- Current Content: ${v.name}\n${v.body}`);
+      o.push('## Rewrite Content Request');
+    }else{
+      o.push('## Current User Request');
+    }
     return o.join("\n\n") + "\n\n";
   }
 
@@ -279,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   sophia.send = function(nodeId, prompt, createChild=false, label=null) {
     // Set up prompt
+    prompt = trim(prompt, ':*#');
     let history = sophia.compileContext(maxLevels=5, onChild=createChild);
     sophia.promptHistory.push(prompt);
     const data = {
@@ -295,9 +314,6 @@ document.addEventListener("DOMContentLoaded", () => {
       targetNode = hierarchyEditor.createNode("Thinking...", parentNode);
       parentNode.children.push(targetNode);
       // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
-      // if (label){
-      //   parentNode.body = parentNode.body.replaceAll(`**${label}**`, `[${label}](#${targetNode.id})`);
-      // }
       if (label) {
         hierarchyEditor.queueRewrite(
           parentNode,
@@ -404,4 +420,8 @@ document.addEventListener("DOMContentLoaded", () => {
     hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
   });
 
+  // Make sure they really want to leave
+  window.onbeforeunload = function() {
+    return "";
+  }
 });

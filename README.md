@@ -51,4 +51,6 @@ PROWL_VENDOR_API_KEY= ... put your key ...
 - Make `Update` button reference the current node's contents and the revision request (so it revises what is already there if something exists)
 - JS based tree diff and maybe tregex?
 - Some form of simplified RAG without too much overhead (ModernBERT?)
-
+- ✅ Stop user from leaving page
+- On serialization of hierarchyEditor, make it use parent.id instead of null
+- Finish SQLite3 ORM in back-end with tree diff and entity filesystem indexing
