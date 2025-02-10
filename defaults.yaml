@@ -1,9 +1,21 @@
 agents:
   research:
-    - model: qwen/qwen-2.5-7b-instruct
-    - agent_name: Expert
-    - user_name: Request
+    model: qwen/qwen-2.5-7b-instruct
+    agent_name: Expert
+    user_name: Request
   roleplay:
-    - model: 
-    - agent_name: Roleplayer
-    - user_name: Player
+    model: meta-llama/llama-3.1-70b-instruct
+    agent_name: Roleplayer
+    user_name: Player
+  coding:
+    model: qwen/qwen-2.5-coder-32b-instruct
+    agent_name: Programmer
+    user_name: Client
+  marketing:
+    model: 
+    agent_name: Expert Marketer
+    user_name: Consulting Client
+  math:
+    model: qwen/qvq-72b-preview
+    agent_name: Mathematician
+    user_name: Student

@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from util import think, fetch_models
+from util import think, fetch_models, load_defaults
 
 app = FastAPI()
 
@@ -36,6 +36,7 @@ Today:
         drop down option on the node form
     set defaults.yaml up to give default configs from the server, for different agents
         maybe make it a trickle tree over the prompts folder
+    fix language integration
 """
 
 # Add a CORS middleware with a lenient policy:
@@ -53,13 +54,15 @@ PATH = 'data/'
 
 class ThinkRequest(BaseModel):
     prompt: str
+    history: Optional[str] = None
     agent: Optional[str] = None
     model: Optional[str] = None
+    language: Optional[str] = 'English'
 
 @app.post("/think")
 async def think_endpoint(request: ThinkRequest):
     try:
-        result = await think(request.prompt, request.model)
+        result = await think((request.history or "") + request.prompt, request.model, request.language)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -78,8 +81,23 @@ async def get_data():
 async def get_data():
     """ Return the list of possibly selectable models """
     # should cache models based on the PROWL_VLLM_ENDPOINT
-    o = await fetch_models()
-    return o
+    try:
+        o = await fetch_models()
+        return o
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/defaults")
+async def get_data():
+    """ Return the list of possibly selectable models """
+    # should cache models based on the PROWL_VLLM_ENDPOINT
+    try:
+        o = load_defaults()
+        return o
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/save")
 async def save_endpoint(request: SaveRequest):

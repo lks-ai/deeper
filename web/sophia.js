@@ -120,6 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const sophia = {};
     sophia.promptHistory = [];
     sophia.treeName = '';
+    sophia.defaults = null;
+    sophia.language = 'English';
 
     if (!window.hierarchyEditor) {
       console.error("HierarchyEditor is not available.");
@@ -150,6 +152,10 @@ document.addEventListener("DOMContentLoaded", () => {
     showModal(`
         <h2>Branch Options<br><small>${currentNode.name}</small></h2>
         <ul>
+            <li>
+              <label>Agent</label><br>
+              <select id="agent" onchange="sophia.setAgentConfig(this.value);">${sophia.compileAgentSelect()}</select>
+            </li>
             <li>
               <label>Save</label><br><input type="text" id="save-name" value="${sophia.treeName}" placeholder="Tree Name">
               <div>
@@ -217,13 +223,13 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Set up tree configuration for the default research agent (more agents provided by server API)
-  hierarchyEditor.config = {
-    'model': 'qwen/qwen-2.5-7b-instruct',
-    'agent': 'research',
-    'agent_name': 'Expert',
-    'user_name': 'Request',
-  };
-  hierarchyEditor.treeData.config = hierarchyEditor.config;
+  // hierarchyEditor.config = {
+  //   'model': 'qwen/qwen-2.5-7b-instruct',
+  //   'agent': 'research',
+  //   'agent_name': 'Expert',
+  //   'user_name': 'Request',
+  // };
+  // hierarchyEditor.treeData.config = hierarchyEditor.config;
 
   hierarchyEditor.title = "DeepR";
   hierarchyEditor.treeData.name = "DeepR.wiki";
@@ -273,10 +279,18 @@ document.addEventListener("DOMContentLoaded", () => {
     var history = sophia.promptHistory;
     for (var i = 0; i < history.length; i++){
         let v = history[history.length - i - 1];
-        o.push('<option onclick="document.getElementById(\'message-input\').value=this.value;">' + v + '</option>');
+        o.push('<option>' + v + '</option>');
     }
     if (o.length == 0) o.push('<option value="">prompt history</option>');
-    return '<select id="prompt-history">' + o.join("") + '</select>';
+    return '<select id="prompt-history" onchange="document.getElementById(\'message-input\').value=this.value;">' + o.join("") + '</select>';
+  }
+
+  sophia.compileAgentSelect = function(){
+    let o = [];
+    for (let config in sophia.defaults.agents){
+      o.push(`<option value="${config}">${config}</option>`);
+    }
+    return o.join("");
   }
 
   sophia.compileTreeSelect = async function(){
@@ -319,6 +333,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  sophia.getDefaults = async function(){
+    try {
+      const response = await fetch(`${HOST}/defaults`);
+      if (!response.ok) {
+        throw new Error(`Error fetching data: ${response.status}`);
+      }
+      const data = await response.json();
+      sophia.defaults = data;          
+    } catch (error) {
+      console.error("Failed to fetch models:", error);
+      throw error;
+    }
+  }
+
+  sophia.setAgentConfig = function(config_name){
+    // set once
+    sophia._agentConfig = sophia.defaults.agents[config_name];
+    sophia._agentConfig.agent = config_name;
+  }
+
+  sophia.getAgentConfig = function(){
+    // get once
+    let r = sophia._agentConfig;
+    sophia._agentConfig = {};
+    return r;
+  }
+
   sophia.send = function(nodeId, prompt, createChild=false, label=null) {
     // Working data
     let targetNode = null;
@@ -330,8 +371,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let history = sophia.compileContext(maxLevels=80, onChild=createChild);
     sophia.promptHistory.push(prompt);
     const data = {
-      prompt: history + prompt,
-      model: config.model
+      history: history,
+      prompt: prompt,
+      model: config.model,
+      language: sophia.language,
     };
 
     // Pre-fetch interface setup
@@ -349,8 +392,11 @@ document.addEventListener("DOMContentLoaded", () => {
           `[${label}](#${targetNode.id})`
         );
       }
-      
     }
+    let acfg = sophia.getAgentConfig();
+    if (acfg)
+      targetNode.config = acfg;
+
     setTimeout(function(){
         hierarchyEditor.render();
         hierarchyEditor.breadcrumbRow.scrollBy(10024, 0);
@@ -453,4 +499,11 @@ document.addEventListener("DOMContentLoaded", () => {
   window.onbeforeunload = function() {
     return "";
   }
+
+  setTimeout(async function(){
+    await sophia.getDefaults();
+    hierarchyEditor.config = sophia.defaults.agents.research;
+    hierarchyEditor.treeData.config = hierarchyEditor.config;
+  }, 0);
+
 });

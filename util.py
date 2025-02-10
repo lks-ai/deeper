@@ -7,7 +7,7 @@ models = [
 
 # Main function
 
-async def think(prompt:str, model=None):
+async def think(prompt:str, model=None, language='English'):
     def stop_early(var:prowl.Variable):
         if var.name == 'stop_now':
             if "y" in var.value.lower():
@@ -20,7 +20,7 @@ async def think(prompt:str, model=None):
         d = r.get()
         thoughts = r.var('thought').hist()
         d['thought'] = "\n".join([v['value'] for v in thoughts])
-        r:prowl.Return = await stack.run(['output'], prefix=r.completion, model=model, inputs={'language': d.get('language') or 'English'}, stops=['</reply>'])
+        r:prowl.Return = await stack.run(['output'], prefix=r.completion, model=model, inputs={'language': language}, stops=['</reply>'])
         d.update(r.get())
         return d
     except Exception as e:
@@ -41,3 +41,12 @@ async def fetch_models() -> dict:
     except Exception as e:
         print(e)
         raise
+
+import yaml
+def load_defaults() -> dict:
+    with open("defaults.yaml") as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+            raise
