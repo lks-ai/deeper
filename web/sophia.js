@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let off = l.length - n;
     let last = l[l.length - 1];
     if (!onChild) n--; // omit current entry if it an update
-    if (n <= 0) return "";
+    // if (n <= 0) return "";
     let o = [];
     o.push('## Conversation History')
     // Compile the history by entry from [off - n] to off - 1
