@@ -8,12 +8,16 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from util import think
+from util import think, fetch_models
 
 app = FastAPI()
 
 """
 Today:
+    finish sophia.getModels()
+    add `agent` to options menu on nodes
+        agents include models
+            once agent is selected, it updates the config model and agent fields
     - loading and saving
     - prompt history
         add to the saved data!
@@ -30,6 +34,8 @@ Today:
         prompts/default will load first in stack, then the template name if used
         make UI part for this too on options panel: study, roleplay, etc. can be pre-built
         drop down option on the node form
+    set defaults.yaml up to give default configs from the server, for different agents
+        maybe make it a trickle tree over the prompts folder
 """
 
 # Add a CORS middleware with a lenient policy:
@@ -47,6 +53,7 @@ PATH = 'data/'
 
 class ThinkRequest(BaseModel):
     prompt: str
+    agent: Optional[str] = None
     model: Optional[str] = None
 
 @app.post("/think")
@@ -65,6 +72,13 @@ class SaveRequest(BaseModel):
 async def get_data():
     """ Return the list of different saved trees """
     o = [f for f in listdir(PATH) if isfile(join(PATH, f))]
+    return o
+
+@app.get("/models")
+async def get_data():
+    """ Return the list of possibly selectable models """
+    # should cache models based on the PROWL_VLLM_ENDPOINT
+    o = await fetch_models()
     return o
 
 @app.post("/save")

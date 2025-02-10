@@ -13,12 +13,31 @@ async def think(prompt:str, model=None):
             if "y" in var.value.lower():
                 return False
     model = model or models[0]
-    stack = ProwlStack(folder=["prompts/"], silent=False) #, stream_level=prowl.StreamLevel.VARIABLE, variable_event=stop_early)
-    r:prowl.Return = await stack.run(['identity', 'input', 'think'], inputs={'user_request': prompt}, model=model)
-    # TODO Introduce early stopping based on streaming
-    d = r.get()
-    thoughts = r.var('thought').hist()
-    d['thought'] = "\n".join([v['value'] for v in thoughts])
-    r:prowl.Return = await stack.run(['output'], prefix=r.completion, model=model, stops=['</reply>'])
-    d.update(r.get())
-    return d
+    try:
+        stack = ProwlStack(folder=["prompts/"], silent=False) #, stream_level=prowl.StreamLevel.VARIABLE, variable_event=stop_early)
+        r:prowl.Return = await stack.run(['identity', 'input', 'think'], inputs={'user_request': prompt}, model=model)
+        # TODO Introduce early stopping based on streaming
+        d = r.get()
+        thoughts = r.var('thought').hist()
+        d['thought'] = "\n".join([v['value'] for v in thoughts])
+        r:prowl.Return = await stack.run(['output'], prefix=r.completion, model=model, inputs={'language': d.get('language') or 'English'}, stops=['</reply>'])
+        d.update(r.get())
+        return d
+    except Exception as e:
+        print(e)
+        raise
+
+# Support functions
+import os
+import aiohttp
+
+async def fetch_models() -> dict:
+    base_url = os.getenv('PROWL_VLLM_ENDPOINT')
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{base_url}/models") as response:
+                response.raise_for_status()
+                return await response.json()
+    except Exception as e:
+        print(e)
+        raise

@@ -210,11 +210,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // Or use prefix/suffix:
     boldReplacer: function(text){ 
       let node = hierarchyEditor.getCurrentNode();
-      return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send('${node.id}', 'expand ${text}', createChild=true, label='${text}');"><strong>${text}</strong></a>`;
+      return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send('${node.id}', '${text}', createChild=true, label='${text}');"><strong>${text}</strong></a>`;
     },
     // boldPrefix: '<a href="#" on>',
     // boldSuffix: '</a>'
   };
+
+  // Set up tree configuration for the default research agent (more agents provided by server API)
+  hierarchyEditor.config = {
+    'model': 'qwen/qwen-2.5-7b-instruct',
+    'agent': 'research',
+    'agent_name': 'Expert',
+    'user_name': 'Request',
+  };
+  hierarchyEditor.treeData.config = hierarchyEditor.config;
+
   hierarchyEditor.title = "DeepR";
   hierarchyEditor.treeData.name = "DeepR.wiki";
   hierarchyEditor.treeData.id = window.nav.getId();
@@ -241,7 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < n; i++){
         let v = l[off + i];
         if (v.metadata.hasOwnProperty('user_request')){
-          o.push(`--- User:\n${v.metadata.user_request || ""}\n\n--- Expert: ${v.name}\n${v.body}`);
+          o.push(`--- ${v.config.user_name}:\n${v.metadata.user_request || ""}\n\n--- ${v.config.agent_name}: ${v.name}\n${v.body}`);
         }else{
           o.push(`--- Content: ${v.name}\n${v.body}`);
         }
@@ -295,18 +305,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  sophia.getModels = async function(){
+    try {
+      const response = await fetch(`${HOST}/models`);
+      if (!response.ok) {
+        throw new Error(`Error fetching data: ${response.status}`);
+      }
+      const data = await response.json();
+      sophia.models = data;          
+    } catch (error) {
+      console.error("Failed to fetch models:", error);
+      throw error;
+    }
+  }
+
   sophia.send = function(nodeId, prompt, createChild=false, label=null) {
+    // Working data
+    let targetNode = null;
+    let parentNode = hierarchyEditor.getCurrentNode();
+    let config = hierarchyEditor.getCurrentConfig();
+
     // Set up prompt
     prompt = trim(prompt, ':*#');
     let history = sophia.compileContext(maxLevels=80, onChild=createChild);
     sophia.promptHistory.push(prompt);
     const data = {
-      prompt: history + prompt
+      prompt: history + prompt,
+      model: config.model
     };
 
     // Pre-fetch interface setup
-    let targetNode = null;
-    let parentNode = hierarchyEditor.getCurrentNode();
     if (!createChild){
       targetNode = parentNode;
       targetNode.name = "Thinking...";
@@ -352,7 +380,8 @@ document.addEventListener("DOMContentLoaded", () => {
       targetNode.metadata = result;
       targetNode.metadata.user_request = prompt;
       // Set other fields
-      targetNode.name = result.label;
+      let cleanName = result.label.replace('Knowledge Label:', '')
+      targetNode.name = trim(cleanName, '- ');
       targetNode.body = result.response;
       // Asynchronously make the interface do stuff
       setTimeout(function(){

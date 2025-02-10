@@ -78,6 +78,8 @@
             this.nodeEditorMode = "view";
             this.showMetadata = true;
             this.markdownOptions = {};
+            this.config = {}; // config override options to place in the tree (trickle down)
+            this.currentConfig = {};  // the condig as calculated by focus path
             
             // Clipboard for branch copy/cut.
             this.clipboard = null;
@@ -195,7 +197,9 @@
                 body: node.body,
                 metadata: Object.assign({}, node.metadata),
                 image_url: node.image_url,
+                media: node.media,
                 type: node.type,
+                config: node.config,
                 parent: newParent,
                 children: []
             };
@@ -228,6 +232,16 @@
             return this.getNodeType(node.type) || { label: "Node" };
         }
         
+        getCurrentConfig() {
+            // Gets the config as a trickle-down composite
+            let curConfig = {};
+            this.currentFocusPath.forEach((node, index) => {
+                curConfig = {...curConfig, ...node.config};
+            });
+            this.currentConfig = curConfig;
+            return curConfig;
+        }
+        
         render() {
             // Update background image if current node has an image_url.
             let currentNode = this.currentFocusPath[this.currentFocusPath.length - 1];
@@ -243,7 +257,7 @@
             window.nav.setHash(currentNode.id);
             document.title = `${currentNode.name} - ${this.title}`;
         }
-        
+
         renderBreadcrumb() {
             this.breadcrumbRow.innerHTML = "";
             this.currentFocusPath.forEach((node, index) => {
@@ -642,7 +656,7 @@
         toJson(parent=null, toString=false){
             const treeData = parent || this.treeData;
             function cloneWithoutParent(node) {
-                const { id, content, name, body, metadata, image_url, type, children, media } = node;
+                const { id, content, name, body, metadata, image_url, media, type, config, children } = node;
                 return {
                     id,
                     content,
@@ -652,6 +666,7 @@
                     image_url,
                     media,
                     type,
+                    config,
                     children: children.map(child => cloneWithoutParent(child))
                 };
             }
@@ -682,6 +697,7 @@
             newNode.metadata = nodeData.metadata || {};
             newNode.image_url = nodeData.image_url || null;
             newNode.type = nodeData.type || null;
+            newNode.config = parentNode.config || this.config;
             parentNode.children.push(newNode);
             this.render();
             return newNode;
@@ -693,6 +709,8 @@
             node.body = (newData.body !== undefined) ? newData.body : node.body;
             node.metadata = newData.metadata || node.metadata;
             node.image_url = newData.image_url || node.image_url;
+            node.media = newData.media || node.media;
+            node.config = {...node.config, ...newData.config};
             node.type = newData.type || node.type;
             this.render();
             return true;
@@ -744,10 +762,11 @@
                 body: "",           // rich content body (markdown supported)
                 metadata: {},       // flat JSON object
                 image_url: null,    // optional background image URL
+                media: [],          // optional list of media objects
                 type: null,         // node type identifier (if set)
+                config: {},
                 parent: parent,
                 children: [],
-                media: []
             };
         }
         

@@ -30,6 +30,22 @@ PROWL_MODEL=qwen/qwen-2.5-7b-instruct
 PROWL_VENDOR_API_KEY= ... put your key ...
 ```
 
+## Install
+From the parent folder you want to install Deepr on.
+```sh
+git clone https://github.com/lks-ai/deeper.git
+cd deeper
+pip install -r requirements.txt
+```
+
+## Get Started
+From the `deeper` folder you just installed
+```sh
+python serve.py
+```
+Then navigate your browser to `http://localhost:8123`
+
+
 ## TODO
 - Swipe left and right: swipe through peers, or if all the way left, swipe to parent, all the way right on breadcrumb? swipe to first child
 - Select which model to run and which endpoint to point to

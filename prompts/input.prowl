@@ -1,2 +1,8 @@
-# User Request
+# Request
 {user_request}
+
+## Request language
+Write the language of the request on the line below:
+- Request Language: {language(2, 0.0)}
+
+The request is in the context of creating or editing content based on an instruction or a topic.

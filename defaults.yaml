@@ -1,0 +1,9 @@
+agents:
+  research:
+    - model: qwen/qwen-2.5-7b-instruct
+    - agent_name: Expert
+    - user_name: Request
+  roleplay:
+    - model: 
+    - agent_name: Roleplayer
+    - user_name: Player
