@@ -2,4 +2,4 @@ prompt-owl==0.1.17
 fastapi
 uvicorn
 pydantic
-yaml
+PyYAML
