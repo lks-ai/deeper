@@ -62,7 +62,7 @@ class ThinkRequest(BaseModel):
 @app.post("/think")
 async def think_endpoint(request: ThinkRequest):
     try:
-        result = await think((request.history or "") + request.prompt, request.model, request.language)
+        result = await think((request.history or "") + request.prompt, model=request.model, agent=request.agent, language=request.language)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

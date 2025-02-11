@@ -1,3 +1,11 @@
+body {
+    font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .node-title {
+    font-family: 'Roboto Bold', 'Montserrat Bold', sans-serif;
+}
+
 .modal-overlay ul {
     list-style: none; /* Remove default bullet points */
     margin: 0;

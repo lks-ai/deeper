@@ -7,14 +7,22 @@ models = [
 
 # Main function
 
-async def think(prompt:str, model=None, language='English'):
+async def think(prompt:str, model=None, agent=None, language='English'):
     def stop_early(var:prowl.Variable):
         if var.name == 'stop_now':
             if "y" in var.value.lower():
                 return False
+    folders = ["prompts/"]
+    # load agent folder prompts (will auto-override)
+    if agent is not None:
+        folders.append(f"prompts/{agent}/")
+        defaults:dict = load_defaults()
+        agent_:dict = defaults['agents'].get(agent)
+        if agent_ is not None:
+            model = agent_.get('model') or model
     model = model or models[0]
     try:
-        stack = ProwlStack(folder=["prompts/"], silent=False) #, stream_level=prowl.StreamLevel.VARIABLE, variable_event=stop_early)
+        stack = ProwlStack(folder=folders, silent=False) #, stream_level=prowl.StreamLevel.VARIABLE, variable_event=stop_early)
         r:prowl.Return = await stack.run(['identity', 'input', 'think'], inputs={'user_request': prompt}, model=model)
         # TODO Introduce early stopping based on streaming
         d = r.get()

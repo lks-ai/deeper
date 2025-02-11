@@ -118,6 +118,7 @@ function trim (s, c) {
 
 document.addEventListener("DOMContentLoaded", () => {
     const sophia = {};
+    sophia.dirty = false;
     sophia.promptHistory = [];
     sophia.treeName = '';
     sophia.defaults = null;
@@ -244,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
   Sophia client stuff
   */
 
-  sophia.compileContext = function(maxLevels=5, onChild=false){
+  sophia.compileContext = function(config, maxLevels=5, onChild=false){
     let l = hierarchyEditor.currentFocusPath;
     let n = l.length < maxLevels ? l.length: maxLevels;
     let off = l.length - n;
@@ -257,13 +258,14 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < n; i++){
         let v = l[off + i];
         if (v.metadata.hasOwnProperty('user_request')){
-          o.push(`--- ${v.config.user_name}:\n${v.metadata.user_request || ""}\n\n--- ${v.config.agent_name}: ${v.name}\n${v.body}`);
+          o.push(`--- ${config.user_name}:\n${v.metadata.user_request || ""}\n\n--- ${config.agent_name}: ${v.name}\n${v.body}`);
         }else{
           o.push(`--- Content: ${v.name}\n${v.body}`);
         }
     }
     // If we are updating, and body.length > 0 then include a block for rewriting the request
-    if (!onChild && last.body.length > 0){
+    let justStarting = n <= 0 && !sophia.dirty
+    if (!onChild && last.body.length > 0 && !justStarting){
       let v = last;
       o.push(`--- Current Content: ${v.name}\n${v.body}`);
       o.push('## Rewrite Content Request');
@@ -287,8 +289,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   sophia.compileAgentSelect = function(){
     let o = [];
+    let curAgent = hierarchyEditor.getCurrentConfig().agent;
     for (let config in sophia.defaults.agents){
-      o.push(`<option value="${config}">${config}</option>`);
+      let selected = config == curAgent ? ' selected': '';
+      o.push(`<option value="${config}"${selected}>${config}</option>`);
     }
     return o.join("");
   }
@@ -368,12 +372,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Set up prompt
     prompt = trim(prompt, ':*#');
-    let history = sophia.compileContext(maxLevels=80, onChild=createChild);
+    let history = sophia.compileContext(config, maxLevels=80, onChild=createChild);
     sophia.promptHistory.push(prompt);
     const data = {
       history: history,
       prompt: prompt,
-      model: config.model,
+      //model: config.model,
       language: sophia.language,
     };
 
@@ -396,6 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let acfg = sophia.getAgentConfig();
     if (acfg)
       targetNode.config = acfg;
+      data.agent = acfg.agent;
 
     setTimeout(function(){
         hierarchyEditor.render();
@@ -429,13 +434,16 @@ document.addEventListener("DOMContentLoaded", () => {
       let cleanName = result.label.replace('Knowledge Label:', '')
       targetNode.name = trim(cleanName, '- ');
       targetNode.body = result.response;
+
+      sophia.dirty = true;
+
       // Asynchronously make the interface do stuff
       setTimeout(function(){
-        hierarchyEditor.render();
+        hierarchyEditor.render(from=targetNode);
         hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
         hierarchyEditor.childrenRow.scrollBy(1024, 0);
       }, 0);
-      window.scrollTo(0, 0);
+      if (targetNode == hierarchyEditor.getCurrentNode()) window.scrollTo(0, 0);
     })
     .catch(error => {
       console.log(`Error: ${error}`);
@@ -470,6 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       hierarchyEditor.fromJson(data, !globalScope ? hierarchyEditor.getCurrentNode(): null);
       sophia.treeName = name;
+      sophia.dirty = true;
       setTimeout(function(){
         hierarchyEditor.render();
       }, 0);

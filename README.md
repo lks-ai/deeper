@@ -48,25 +48,31 @@ Then navigate your browser to `http://localhost:8123`
 
 ## TODO
 - Swipe left and right: swipe through peers, or if all the way left, swipe to parent, all the way right on breadcrumb? swipe to first child
-- Select which model to run and which endpoint to point to
-- Control the System prompt within the interface
+- ✅ Select which model to run (Agents)
+- Control the agent prompts within the interface
+    - Each agent has it's own folder in prompts with overrides
 - ✅ Hash based navigation (browser history plus UX control URL<->UX)
 - ✅ Nodes should have UUIDs
 - Download tree files
+- Hash based loading with SQLite3 node id indexing
 - User accounts and folders
 - Node naming based on links
-- Remapping links back to existing nodes as hrefs
+- ✅ Remapping links and full concurrent body rewrite queue
 - Multilinguality
 - Multimodality with Drag & Drop
 - Code block cleanup
-- Copy function for code blocks and full message markdown
-- Fix prompt history selection on mobile
+    - Copy function for code blocks and full message markdown
+- ✅ Fix prompt history selection on mobile
 - Fixing HTTPS on the demo
 - Showing multiline metadata properly
 - Some sort of Tree selector for modals
-- Make `Update` button reference the current node's contents and the revision request (so it revises what is already there if something exists)
+- ✅ Make `Update` button reference the current node's contents and the revision request (so it revises what is already there if something exists)
 - JS based tree diff and maybe tregex?
 - Some form of simplified RAG without too much overhead (ModernBERT?)
 - ✅ Stop user from leaving page
 - On serialization of hierarchyEditor, make it use parent.id instead of null
 - Finish SQLite3 ORM in back-end with tree diff and entity filesystem indexing
+- Search Capability for web search
+- Browsing capability
+- Agent Prompts for (coder, roleplayer, etc)
+- Tree based Prompt templates (graft a branch, re-generate full branch with nulled bodies)

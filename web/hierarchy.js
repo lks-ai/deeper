@@ -242,7 +242,7 @@
             return curConfig;
         }
         
-        render() {
+        render(from=null) {
             // Update background image if current node has an image_url.
             let currentNode = this.currentFocusPath[this.currentFocusPath.length - 1];
             if (currentNode.image_url) {
@@ -252,7 +252,9 @@
             }
             this.renderBreadcrumb();
             this.renderChildren();
-            this.renderNodeEditor();
+            if (from == null || from == this.getCurrentNode()){
+                this.renderNodeEditor();
+            }
             this.updateConnections();
             window.nav.setHash(currentNode.id);
             document.title = `${currentNode.name} - ${this.title}`;
