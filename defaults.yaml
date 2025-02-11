@@ -10,9 +10,9 @@ agents:
   coding:
     model: qwen/qwen-2.5-coder-32b-instruct
     agent_name: Programmer
-    user_name: Client
+    user_name: Thought
   marketing:
-    model: 
+    model: google/gemini-2.0-flash-001
     agent_name: Expert Marketer
     user_name: Consulting Client
   math:

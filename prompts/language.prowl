@@ -1,0 +1,9 @@
+# Classify Language
+Figure out the language used in the request with attention to the content to figure out best reply language
+
+## Request Text
+{user_request}
+
+## Language Traits
+Write the ISO 639-1 Code for the language of the last request on the line below:
+- Request Language: {language(2, 0.0)}

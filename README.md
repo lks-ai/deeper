@@ -72,7 +72,19 @@ Then navigate your browser to `http://localhost:8123`
 - ✅ Stop user from leaving page
 - On serialization of hierarchyEditor, make it use parent.id instead of null
 - Finish SQLite3 ORM in back-end with tree diff and entity filesystem indexing
+- Ability to select text and use that as the prompt
 - Search Capability for web search
 - Browsing capability
 - Agent Prompts for (coder, roleplayer, etc)
 - Tree based Prompt templates (graft a branch, re-generate full branch with nulled bodies)
+- Multi-directional rewriting
+    - Gives ability to rewrite the content of a node based on the content of it's children
+    - rewrite content based on peers
+    - rewrite content based on sequential progression
+    - rewr
+- Mult-directional context stacking
+    - currently it's just a straight path directly from the root to the leaf
+    - could have a mode where it sequentially stacks any peer nodes before it
+- Multimedia content
+    - Making sure to safely put 
+- Cross-Branch Easy linking
