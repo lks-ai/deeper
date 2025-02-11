@@ -398,19 +398,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     let acfg = sophia.getAgentConfig();
-    if (acfg)
+    if (acfg){
       targetNode.config = acfg;
       data.agent = acfg.agent;
+    }
 
     setTimeout(function(){
         hierarchyEditor.render();
         hierarchyEditor.breadcrumbRow.scrollBy(10024, 0);
         hierarchyEditor.childrenRow.scrollBy(10024, 0);
       }, 0);
-
-    // TODO Store the `label` in sophia.index for lookup and link overwrite?
-    //  or use a way to link to the replies
-    //  maps {label: nodeId}
 
     // Perform the fetch
     fetch(`${HOST}/think`, {
