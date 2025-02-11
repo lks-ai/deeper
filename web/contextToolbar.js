@@ -45,6 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener('click', function(e) {
           e.stopPropagation();
           btn.callback(text);
+          toolbarElement.remove();
+          toolbarElement = null;
         });
         toolbarElement.appendChild(button);
       });

@@ -193,15 +193,74 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Edit form submitted for:", data.node);
   });
 
-  // For demonstration, add a modular section below metadata.
-  // This section will simply show a placeholder media banner.
-  window.hierarchyEditor.addModularSection("mediaBanner", (currentNode) => {
+  // Thought Section
+  window.hierarchyEditor.addModularSection("thoughtSection", (currentNode) => {
+    if (!currentNode.metadata.thought) return;
+    // Create the container div for the entire section
+    let container = document.createElement("div");
+    container.style.marginTop = "20px";
+    container.style.padding = "10px";
+  
+    // Create the header bar
+    let header = document.createElement("div");
+    header.style.backgroundColor = "rgba(128,128,128,0.4)";
+    header.style.cursor = "pointer";
+    header.style.padding = "10px";
+    header.style.display = "flex";
+    header.style.alignItems = "center";
+  
+    // Create the toggle icon (initially a right-pointing arrow)
+    let toggleIcon = document.createElement("span");
+    toggleIcon.textContent = "▶";
+    toggleIcon.style.marginRight = "8px";
+  
+    // Create the header text element
+    let headerText = document.createElement("span");
+    headerText.textContent = "Thoughts";
+  
+    // Append the icon and text to the header
+    header.appendChild(toggleIcon);
+    header.appendChild(headerText);
+  
+    // Create the content container (initially hidden)
+    let content = document.createElement("div");
+    content.style.display = "none"; // Hide by default
+    content.style.padding = "10px";
+    // Here you can insert your actual thoughts content; for now, we use a placeholder.
+    let thoughts = currentNode.metadata.thought.split('\n');
+    console.log(thoughts);
+    content.innerHTML = thoughts.map((thought) => {
+      return `<div style="padding: 1em">${thought}</div>`;
+    }).join('');
+  
+    // Add click event to toggle the content visibility and change the arrow
+    header.addEventListener("click", function() {
+      if (content.style.display === "none") {
+        // Show the content and update the icon to a down caret
+        content.style.display = "block";
+        toggleIcon.textContent = "▼";
+      } else {
+        // Hide the content and revert the icon back to a right arrow
+        content.style.display = "none";
+        toggleIcon.textContent = "▶";
+      }
+    });
+  
+    // Append the header and content divs to the main container
+    container.appendChild(header);
+    container.appendChild(content);
+  
+    // Return the container so it gets added to the page
+    return container;
+  });
+
+  // Chat Form
+  window.hierarchyEditor.addModularSection("chatSection", (currentNode) => {
     let div = document.createElement("div");
     div.style.marginTop = "20px";
     div.style.padding = "10px";
     div.style.border = "1px dashed #aaa";
     div.innerHTML = `
-    <div id="chat-box"></div>
     <textarea type="text" id="message-input" placeholder="Explain something or ask a question..." style="height: 7em;"></textarea>
     <button id="send-btn" onclick="var e = document.getElementById('message-input'); window.sophia.send('` + currentNode.id + `', e.value); e.value='';">↻ Update</button>
     ${sophia.compilePromptHistory()}

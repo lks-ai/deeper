@@ -581,6 +581,7 @@
         }
         
         createMetadataListItem(key, value, currentNode) {
+            let multiline = value.includes('\n');
             let li = document.createElement("li");
             let keyInput = document.createElement("input");
             keyInput.type = "text";
@@ -595,8 +596,14 @@
                 }
             });
             li.appendChild(keyInput);
-            let valueInput = document.createElement("input");
-            valueInput.type = "text";
+            let valueInput = null;
+            if (multiline){
+                valueInput = document.createElement("textarea");
+                valueInput.style.height = '4em';
+            }else{
+                valueInput = document.createElement("input");
+                valueInput.type = "text";
+            }
             valueInput.placeholder = "Value";
             valueInput.value = value;
             valueInput.addEventListener("input", () => {

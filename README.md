@@ -55,7 +55,7 @@ Then navigate your browser to `http://localhost:8123`
     - Each agent has it's own folder in prompts with overrides
 - ✅ Hash based navigation (browser history plus UX control URL<->UX)
 - ✅ Nodes should have UUIDs
-- Thought View Breakdown
+- ✅ Thought View Breakdown
 - Download tree files
 - Hash based loading with SQLite3 node id indexing
 - User accounts and folders
@@ -66,7 +66,7 @@ Then navigate your browser to `http://localhost:8123`
 - Code block cleanup
     - Copy function for code blocks and full message markdown
 - ✅ Fix prompt history selection on mobile
-- Showing multiline metadata properly
+- ✅ Showing multiline metadata properly
 - Some sort of Tree selector for modals
 - ✅ Make `Update` button reference the current node's contents and the revision request (so it revises what is already there if something exists)
 - JS based tree diff and maybe tregex?

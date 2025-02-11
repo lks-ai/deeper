@@ -1,9 +1,11 @@
 agents:
   research:
+    description: Use for critical thinking and expert research
     model: qwen/qwen-2.5-7b-instruct
     agent_name: Expert
     user_name: Request
   roleplay:
+    description: Use for world building and roleplaying
     model: meta-llama/llama-3.1-70b-instruct
     agent_name: Roleplayer
     user_name: Player
