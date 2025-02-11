@@ -228,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
     content.style.padding = "10px";
     // Here you can insert your actual thoughts content; for now, we use a placeholder.
     let thoughts = currentNode.metadata.thought.split('\n');
-    console.log(thoughts);
     content.innerHTML = thoughts.map((thought) => {
       return `<div style="padding: 1em">${thought}</div>`;
     }).join('');
