@@ -342,7 +342,7 @@
                     addTypeBtn.style.padding = "10px 15px";
                     addTypeBtn.style.border = "2px dashed " + typeData.color;
                     addTypeBtn.style.borderRadius = "8px";
-                    addTypeBtn.style.background = "#e9f7ef";
+                    //addTypeBtn.style.background = "#e9f7ef";
                     addTypeBtn.style.cursor = "pointer";
                     addTypeBtn.addEventListener("click", () => {
                         let currentParent = this.currentFocusPath[this.currentFocusPath.length - 1];
@@ -377,7 +377,7 @@
                 addChildBtn.style.padding = "10px 15px";
                 addChildBtn.style.border = "2px dashed #28a745";
                 addChildBtn.style.borderRadius = "8px";
-                addChildBtn.style.background = "#e9f7ef";
+                //addChildBtn.style.background = "#e9f7ef";
                 addChildBtn.style.cursor = "pointer";
                 addChildBtn.addEventListener("click", () => {
                     let currentParent = this.currentFocusPath[this.currentFocusPath.length - 1];

@@ -1,9 +1,12 @@
 body {
     font-family: 'Roboto', 'Arial', sans-serif;
+    background-color: #121212; /* Very dark background */
+    color: #e0e0e0; /* Light text for readability */
 }
 
 h1, h2, h3, h4, h5, h6, .node-title {
     font-family: 'Roboto Bold', 'Montserrat Bold', sans-serif;
+    color: #e0e0e0;
 }
 
 .modal-overlay ul {
@@ -14,7 +17,7 @@ h1, h2, h3, h4, h5, h6, .node-title {
 
 .modal-overlay li {
     padding: 10px 15px;       /* Comfortable spacing for mobile */
-    border-bottom: 1px solid #eaeaea; /* Light divider between sections */
+    border-bottom: 1px solid #333; /* Dark divider between sections */
 }
 
 .modal-overlay li:last-child {
@@ -25,7 +28,7 @@ h1, h2, h3, h4, h5, h6, .node-title {
     display: block;
     font-weight: bold;
     margin-bottom: 5px;
-    color: #333;
+    color: #e0e0e0;
     font-size: 16px;
 }
 
@@ -37,11 +40,13 @@ h1, h2, h3, h4, h5, h6, .node-title {
 .modal-overlay textarea {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #444; /* Darker border */
     border-radius: 4px;
     font-size: 16px;
     box-sizing: border-box;
     margin-bottom: 5px;
+    background-color: #1e1e1e; /* Dark input background */
+    color: #e0e0e0;
 }
 
 /* Focus state for accessibility and better UX */
@@ -51,13 +56,13 @@ h1, h2, h3, h4, h5, h6, .node-title {
 .modal-overlay select:focus,
 .modal-overlay textarea:focus {
     outline: none;
-    border-color: #007BFF;
+    border-color: #007BFF; /* Accent blue on focus */
     box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
 .modal-container {
     position: relative;
-    background-color: #fff;
+    background-color: #242424;
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -73,9 +78,9 @@ h1, h2, h3, h4, h5, h6, .node-title {
     width: 30%;
     font-size: 1.2em;
 }
-  
+
 code {
-    background: rgba(0, 128, 255, 0.3);
+    background: rgba(0, 128, 255, 0.15); /* Subtle blue tint */
     padding: 0.2em;
     border-radius: 0.3em;
 }

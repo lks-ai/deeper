@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Supabase Modular Auth Template</title>
+  <!-- Load the Supabase client from a CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1, h2 { text-align: center; }
+    .tabs { text-align: center; margin-bottom: 20px; }
+    .tabs button { margin: 0 5px; padding: 10px 15px; }
+    .auth-form { display: none; border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
+    .auth-form.active { display: block; }
+    .form-group { margin-bottom: 10px; }
+    label { display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 8px; }
+    .oauth-buttons { text-align: center; }
+    .oauth-buttons button { margin: 5px; padding: 10px 15px; }
+    #result { margin-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Supabase Auth Template</h1>
+  <div class="tabs">
+    <button data-target="email-login-form">Email Login</button>
+    <button data-target="email-signup-form">Email Signup</button>
+    <button data-target="oauth-form">OAuth Login</button>
+  </div>
+
+  <div id="auth-forms">
+    <!-- Email Login Form -->
+    <div id="email-login-form" class="auth-form active">
+      <h2>Email Login</h2>
+      <div class="form-group">
+        <label for="login-email">Email:</label>
+        <input type="email" id="login-email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password:</label>
+        <input type="password" id="login-password" placeholder="Enter your password" required>
+      </div>
+      <button id="login-button">Login</button>
+    </div>
+
+    <!-- Email Signup Form -->
+    <div id="email-signup-form" class="auth-form">
+      <h2>Email Signup</h2>
+      <div class="form-group">
+        <label for="signup-email">Email:</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="signup-password">Password:</label>
+        <input type="password" id="signup-password" placeholder="Create a password" required>
+      </div>
+      <button id="signup-button">Sign Up</button>
+    </div>
+
+    <!-- OAuth Login Form -->
+    <div id="oauth-form" class="auth-form">
+      <h2>OAuth Login</h2>
+      <div class="oauth-buttons">
+        <button data-provider="google" class="oauth-button">Login with Google</button>
+        <button data-provider="discord" class="oauth-button">Login with Discord</button>
+        <!-- Add more OAuth providers as needed -->
+      </div>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    /***************
+     * SUPABASE SETUP
+     ***************/
+    const SUPABASE_URL = 'https://qfbdxeqxvzwjkrzvexhz.supabase.co'; // Replace with your Supabase URL
+    const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'; // Replace with your Supabase anon key
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    /*********************
+     * AUTHENTICATION API
+     *********************/
+    // Email login
+    async function emailLogin(email, password) {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        return { success: false, message: error.message };
+      }
+      return { success: true, message: 'Logged in successfully!', jwt: data.session?.access_token };
+    }
+
+    // Email signup
+    async function emailSignup(email, password) {
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        return { success: false, message: error.message };
+      }
+      // For some providers, a confirmation email is sent.
+      return { success: true, message: 'Signup successful! Please check your email for confirmation.' };
+    }
+
+    // OAuth login
+    async function oauthLogin(provider) {
+      const { error } = await supabaseClient.auth.signInWithOAuth({ provider });
+      if (error) {
+        return { success: false, message: error.message };
+      }
+      return { success: true, message: 'OAuth flow initiated. Check the popup or redirect.' };
+    }
+
+    /*********************
+     * UI HELPER FUNCTIONS
+     *********************/
+    // Display results / messages
+    function showResult(message, isError = false) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `<p style="color:${isError ? 'red' : 'green'}">${message}</p>`;
+    }
+
+    // Switch between forms
+    function activateForm(formId) {
+      document.querySelectorAll('.auth-form').forEach(form => {
+        form.classList.remove('active');
+      });
+      document.getElementById(formId).classList.add('active');
+    }
+
+    /*********************
+     * EVENT LISTENERS
+     *********************/
+    // Tab switching
+    document.querySelectorAll('.tabs button').forEach(button => {
+      button.addEventListener('click', () => {
+        activateForm(button.getAttribute('data-target'));
+      });
+    });
+
+    // Email Login Button
+    document.getElementById('login-button').addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) {
+        showResult('Please enter both email and password.', true);
+        return;
+      }
+      const result = await emailLogin(email, password);
+      showResult(result.message, !result.success);
+      if (result.success && result.jwt) {
+        console.log('JWT:', result.jwt);
+      }
+    });
+
+    // Email Signup Button
+    document.getElementById('signup-button').addEventListener('click', async () => {
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      if (!email || !password) {
+        showResult('Please enter both email and password.', true);
+        return;
+      }
+      const result = await emailSignup(email, password);
+      showResult(result.message, !result.success);
+    });
+
+    // OAuth Buttons
+    document.querySelectorAll('.oauth-button').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const provider = e.currentTarget.getAttribute('data-provider');
+        const result = await oauthLogin(provider);
+        showResult(result.message, !result.success);
+      });
+    });
+
+    /*********************
+     * AUTH STATE CHANGES (OPTIONAL)
+     *********************/
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session);
+      // Optionally, update the UI based on auth state changes
+    });
+  </script>
+</body>
+</html>

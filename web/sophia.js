@@ -25,16 +25,7 @@ function showModal(contentHtml) {
   
     // Create the modal container
     const modalContainer = document.createElement("div");
-    modalContainer.style.position = "relative";
-    modalContainer.style.backgroundColor = "#fff";
-    modalContainer.style.borderRadius = "8px";
-    modalContainer.style.padding = "20px";
-    modalContainer.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.3)";
-    modalContainer.style.width = "90%";
-    modalContainer.style.height = "90%";
-    // modalContainer.style.maxWidth = "90%";
-    // modalContainer.style.maxHeight = "90%";
-    modalContainer.style.overflowY = "auto";
+    modalContainer.className = "modal-container";
   
     // Create the close button (a left arrow "<")
     const closeButton = document.createElement("button");
@@ -46,7 +37,6 @@ function showModal(contentHtml) {
     closeButton.style.background = "transparent";
     closeButton.style.border = "none";
     closeButton.style.cursor = "pointer";
-    closeButton.style.color = "#333";
     closeButton.id = "close-button";
     closeButton.addEventListener("click", () => {
       document.body.removeChild(overlay);

@@ -1,0 +1,207 @@
+/* Dark Mode CSS */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212; /* very dark background */
+    color: #e0e0e0; /* light text for contrast */
+}
+  
+button {
+    font-size: 1.2em;
+    /* a slightly lighter, semi‑transparent border for buttons */
+    border: 2px solid rgba(200, 200, 200, 0.5);
+    padding: 0.3em;
+    border-radius: 3px;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+  
+.right {
+    float: right;
+}
+  
+#treeHierarchy {
+    position: relative;
+    padding: 20px;
+    overflow: hidden; /* Keep absolutely positioned children contained */
+}
+  
+/* Background image layer for current node (if image_url is set) */
+#bgImage {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.3;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    z-index: -1;
+}
+  
+#svgOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+  
+#breadcrumbRow,
+#childrenRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 10px;
+    scroll-behavior: smooth;
+}
+  
+.breadcrumb-item {
+    padding: 10px 15px;
+    border: 2px solid #444; /* dark border */
+    border-radius: 8px;
+    background-color: #1a1a1a; /* dark background */
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #e0e0e0;
+}
+  
+.breadcrumb-item.active {
+    border-color: #28a745; /* bright green accent */
+    font-weight: bold;
+}
+  
+#childrenRow {
+    margin-top: 30px;
+    gap: 20px;
+}
+  
+.node-card {
+    padding: 15px;
+    /* using a darker blue for a cool accent */
+    border: 2px solid #0056b3;
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    min-width: 100px;
+    text-align: center;
+    position: relative;
+    flex-shrink: 0;
+    color: #e0e0e0;
+}
+  
+.remove-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #e0e0e0;
+}
+  
+#nodeEditor {
+    margin-top: 30px;
+    border-top: 1px solid #444;
+    padding-top: 20px;
+}
+  
+#nodeEditor label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #e0e0e0;
+}
+  
+#nodeEditor input[type="text"],
+#nodeEditor textarea,
+#nodeEditor div[contenteditable="true"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1.3em;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+  
+.node-title {
+    font-size: 1.5em;
+    background-color: #1a1a1a;
+    padding: 5px; /* optional: adds some spacing */
+}
+  
+#metadataSection {
+    margin-top: 20px;
+}
+  
+#metadataList {
+    list-style: none;
+    padding: 0;
+}
+  
+#metadataList li {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+  
+#metadataList input[type="text"] {
+    padding: 5px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+  
+/* Adjusted to a more muted red for dark mode */
+.metadata-remove-btn {
+    background: #a83333;
+    color: #fff;
+    border: none;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+  
+.toolbar-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 18px;
+    float: right;
+    width: 2em;
+    color: #e0e0e0;
+}
+  
+/* Responsive tweaks */
+@media (max-width: 600px) {
+    .node-card {
+      min-width: 80px;
+    }
+}
+  
+a:visited {
+  color: #755ac0;
+}
+
+a {
+  color: #9881ff;
+}
+
+select {
+  background-color: rgba(128,128,128,0.2);
+  color: #e0e0e0;
+  border: 2px solid #aaa;
+  border-radius: 6px;
+}
