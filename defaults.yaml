@@ -4,6 +4,7 @@ agents:
     model: qwen/qwen-2.5-7b-instruct
     agent_name: Expert
     user_name: Request
+    node_type: knowledge
   roleplay:
     description: Use for world building and roleplaying
     model: meta-llama/llama-3.1-70b-instruct
@@ -13,6 +14,7 @@ agents:
     model: qwen/qwen-2.5-coder-32b-instruct
     agent_name: Programmer
     user_name: Thought
+    node_type: code
   marketing:
     model: google/gemini-2.0-flash-001
     agent_name: Expert Marketer

@@ -123,6 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sophia.treeName = '';
     sophia.defaults = null;
     sophia.language = 'English';
+    sophia._agentConfig = {};
 
     if (!window.hierarchyEditor) {
       console.error("HierarchyEditor is not available.");
@@ -328,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
       o.push(`--- Current Content: ${v.name}\n${v.body}`);
       o.push('## Rewrite Content Request');
     }else{
-      o.push('## Current User Request');
+      o.push('## Current Request');
     }
     return o.join("\n\n") + "\n\n";
   }
@@ -427,9 +428,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let targetNode = null;
     let parentNode = hierarchyEditor.getCurrentNode();
     let config = hierarchyEditor.getCurrentConfig();
+    const newNodeType = config.node_type || parentNode.type || nodeTypes[0];
 
     // Set up prompt
-    prompt = trim(prompt, ':*#');
+    prompt = trim(prompt, ':*#,.-');
     let history = sophia.compileContext(config, maxLevels=80, onChild=createChild);
     sophia.promptHistory.push(prompt);
     const data = {
@@ -437,6 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
       prompt: prompt,
       //model: config.model,
       language: sophia.language,
+      agent: config.agent,
     };
 
     // Pre-fetch interface setup
@@ -444,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
       targetNode = parentNode;
       targetNode.name = "Thinking...";
     }else{
-      targetNode = hierarchyEditor.createNode("Thinking...", parentNode);
+      targetNode = hierarchyEditor.createNode("Thinking...", parentNode, type=newNodeType);
       parentNode.children.push(targetNode);
       // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
       if (label) {
@@ -455,10 +458,11 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
     }
+    let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
     let acfg = sophia.getAgentConfig();
-    if (acfg){
+    if (acfg.hasOwnProperty('agent')){
       targetNode.config = acfg;
-      data.agent = acfg.agent;
+      data.agent = config.agent;
     }
 
     setTimeout(function(){
@@ -481,7 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
       var response = result.response;
       var thoughts = result.thought;
       var request = result.user_request;
-      let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
+      
       // Set metadata
       targetNode.metadata = result;
       targetNode.metadata.user_request = prompt;

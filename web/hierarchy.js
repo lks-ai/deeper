@@ -234,7 +234,7 @@
         
         getCurrentConfig() {
             // Gets the config as a trickle-down composite
-            let curConfig = {};
+            let curConfig = this.config;
             this.currentFocusPath.forEach((node, index) => {
                 curConfig = {...curConfig, ...node.config};
             });
@@ -346,8 +346,8 @@
                     addTypeBtn.style.cursor = "pointer";
                     addTypeBtn.addEventListener("click", () => {
                         let currentParent = this.currentFocusPath[this.currentFocusPath.length - 1];
-                        let newNode = this.createNode("New " + typeData.label, currentParent);
-                        newNode.type = typeData.name;
+                        let newNode = this.createNode("New " + typeData.label, currentParent, type=typeData.name);
+                        // newNode.type = typeData.name;
                         // Prepopulate metadata from the type schema.
                         if (Array.isArray(typeData.schema)) {
                             typeData.schema.forEach(metaDef => {
@@ -444,7 +444,7 @@
             
             // Node Name (editable inline)
             let nameLabel = document.createElement("label");
-            nameLabel.innerText = typeData.label + " Name:";
+            nameLabel.innerText = typeData.label;
             viewerContainer.appendChild(nameLabel);
             let nameInput = document.createElement("input");
             nameInput.type = "text";
@@ -609,7 +609,9 @@
             valueInput.addEventListener("input", () => {
                 currentNode.metadata[key] = valueInput.value;
             });
+
             li.appendChild(valueInput);
+
             let removeMetaBtn = document.createElement("button");
             removeMetaBtn.innerText = "✖";
             removeMetaBtn.className = "metadata-remove-btn";
@@ -706,7 +708,7 @@
             newNode.metadata = nodeData.metadata || {};
             newNode.image_url = nodeData.image_url || null;
             newNode.type = nodeData.type || null;
-            newNode.config = parentNode.config || this.config;
+            newNode.config = nodeData.config; //parentNode.config || this.config;
             parentNode.children.push(newNode);
             this.render();
             return newNode;
@@ -763,7 +765,7 @@
         }
         
         // Create a new node. (Each node now has a "type" and an "image_url" property.)
-        createNode(content = "New Node", parent = null) {
+        createNode(content = "New Node", parent = null, type = null) {
             return {
                 id: window.nav.getId(), //"node-" + (this.nodeIdCounter++),
                 content: content,   // legacy text content
@@ -772,7 +774,7 @@
                 metadata: {},       // flat JSON object
                 image_url: null,    // optional background image URL
                 media: [],          // optional list of media objects
-                type: null,         // node type identifier (if set)
+                type: type,         // node type identifier (if set)
                 config: {},
                 parent: parent,
                 children: [],
