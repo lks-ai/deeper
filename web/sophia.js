@@ -284,10 +284,10 @@ document.addEventListener("DOMContentLoaded", () => {
   hierarchyEditor.title = "DeepR";
   hierarchyEditor.treeData.name = "DeepR.wiki";
   hierarchyEditor.treeData.id = window.nav.getId();
-  hierarchyEditor.treeData.body = `Use thinking AI to quickly build a wiki on anything. Great for research, taxonomies, mind mapping and note taking.
+  hierarchyEditor.treeData.body = `Use thinking AI to quickly build a wiki on anything. Great for **research**, **taxonomies**, **mind mapping** and **note taking**.
   [GitHub](https://github.com/lks-ai/deeper) | [By LKS](https://lks.ltd)
 
-  *Begin the conversation by sending a message about the root topic*
+  *Begin the conversation by sending a message about the root topic or clicking one of the bold links*
   `;
 
   /*
@@ -441,6 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
       parentNode.children.push(targetNode);
       // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
       if (label) {
+        targetNode.metadata.tag = trim(label, ':*#,.-');
         hierarchyEditor.queueRewrite(
           parentNode,
           `**${label}**`,
@@ -449,7 +450,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
-    let acfg = sophia.getAgentConfig();
+    
+    // Include any agent config which was set in Node options
+    let acfg = sophia.getAgentConfig(); // get once
     if (acfg.hasOwnProperty('agent')){
       targetNode.config = acfg;
       data.agent = config.agent;
@@ -476,14 +479,16 @@ document.addEventListener("DOMContentLoaded", () => {
       var thoughts = result.thought;
       var request = result.user_request;
       
-      // Set metadata
-      targetNode.metadata = result;
+      // Update metadata
+      targetNode.metadata = {...targetNode.metadata, ...result};
       targetNode.metadata.user_request = prompt;
+
       // Set other fields
       let cleanName = result.label.replace('Knowledge Label:', '')
       targetNode.name = trim(cleanName, '- ');
       targetNode.body = result.response;
 
+      // Set the interface as "touched"
       sophia.dirty = true;
 
       // Asynchronously make the interface do stuff

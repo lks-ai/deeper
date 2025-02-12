@@ -59,7 +59,7 @@ Then navigate your browser to `http://localhost:8123`
 - Download tree files
 - Hash based loading with SQLite3 node id indexing
 - User accounts and folders
-- Node naming based on links
+- Node naming based on links (use a link metadata for quick search lookup)
 - ✅ Remapping links and full concurrent body rewrite queue
 - Multilinguality
 - Multimodality with Drag & Drop for modal inputs
@@ -77,7 +77,7 @@ Then navigate your browser to `http://localhost:8123`
 - Cross-Branch Easy linking
 
 ### SysOps
-- Fixing HTTPS on the demo
+- ✅ Fixing HTTPS on the demo
 - Finish SQLite3 ORM in back-end with tree diff and entity filesystem indexing
 
 ### Server-Side

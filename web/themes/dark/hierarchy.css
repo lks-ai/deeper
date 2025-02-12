@@ -196,7 +196,8 @@ a:visited {
 }
 
 a {
-  color: #9881ff;
+  color: #8a97ff;
+  text-shadow: 1px 3px 4px rgba(128, 0, 54, 1);
 }
 
 select {
