@@ -71,6 +71,13 @@ h1, h2, h3, h4, h5, h6, .node-title {
     overflow-y: auto;
 }
 
+.chat-container {
+    background-color: rgba(96, 121, 255, 0.1);
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px dashed #aaa;
+}
+
 #prompt-history {
     white-space: nowrap;
     overflow: hidden;

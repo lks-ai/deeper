@@ -1,5 +1,5 @@
 # Respond
-Respond concisely based on the conclusions from thoughts. Use markdown formatting and put any important topics or subjects in bold. Reply in {language}.
+Respond concisely based on the conclusions from thoughts. Use markdown formatting and put any important sub-topics or proper nouns in bold. Reply in {language}.
 
 <reply>
 {response(640, 0.0)}

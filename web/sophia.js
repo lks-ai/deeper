@@ -247,9 +247,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Chat Form
   window.hierarchyEditor.addModularSection("chatSection", (currentNode) => {
     let div = document.createElement("div");
-    div.style.marginTop = "20px";
-    div.style.padding = "10px";
-    div.style.border = "1px dashed #aaa";
+    div.className = 'chat-container';
+
     div.innerHTML = `
     <textarea type="text" id="message-input" placeholder="Explain something or ask a question..." style="height: 7em;"></textarea>
     <button id="send-btn" onclick="var e = document.getElementById('message-input'); window.sophia.send('` + currentNode.id + `', e.value); e.value='';">↻ Update</button>

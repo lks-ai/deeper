@@ -197,12 +197,14 @@ a:visited {
 
 a {
   color: #8a97ff;
-  text-shadow: 1px 3px 4px rgba(128, 0, 54, 1);
+}
+a strong {
+  text-shadow: 1px 3px 4px rgba(255, 0, 0, 1);
 }
 
 select {
   background-color: rgba(128,128,128,0.2);
   color: #e0e0e0;
-  border: 2px solid #aaa;
+  border: 2px solid #7f7f7f;
   border-radius: 6px;
 }

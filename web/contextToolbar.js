@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
         position: 'absolute',
         top: y + 'px',
         left: x + 'px',
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(128,128,128,0.5)',
         border: '1px solid #ccc',
         padding: '5px',
         boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
