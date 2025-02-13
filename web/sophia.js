@@ -141,6 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Extra toolbar buttons
   window.hierarchyEditor.addToolbarButton("☰", (currentNode) => {
+    let shareLink = `${HOST}/#share-${encodeURI(sophia.treeName)}`;
     showModal(`
         <h2>Branch Options<br><small>${currentNode.name}</small></h2>
         <ul>
@@ -161,6 +162,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button onclick="sophia.saveData(document.getElementById('save-name').value); hideModal();" title="Saves currently selected branch as a tree">Save Branch</button> &nbsp;
                 <button onclick="sophia.saveData(document.getElementById('save-name').value, true); hideModal();" title="Saves entire tree">Save Root</button>
               </div>
+              <div id="share-link" style="margin-top: 1em;">
+                <label>Share Link</label><span class="inline-code">${shareLink}</span>
+              <div>
             </li>
             <li>
               <label>Load</label><br><select id="load-select"><option value="">Select a tree...</option>${sophia.compileTreeSelect()}</select>
@@ -512,6 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   sophia.saveData = function(name, globalScope=false){
     if (name.length == 0) return;
+    sophia.treeName = name;
     const data = {name: name, data: hierarchyEditor.toJson(!globalScope ? hierarchyEditor.getCurrentNode(): null)};
     fetch(`${HOST}/save`, {
         method: 'POST',
@@ -527,6 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(error => {
         console.log(`Error: ${error}`);
       });
+
   }
 
   sophia.loadData = async function(name, globalScope=false){
@@ -572,13 +578,28 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   };
   
-
+  // Expose sophia to the window scope
   window.sophia = sophia;
 
+  // Load with shares on hash
+  sophia._loadFromHash = async function(){
+    const hash = window.location.hash;
+    if (hash) {
+      const decoded = decodeURIComponent(hash.slice(1)); // remove the '#' and decode
+      if (decoded.startsWith("share-")) {
+        const shareName = decoded.substring("share-".length);
+        await sophia.loadData(shareName, globalScope=true);
+      }
+    }
+  }
+
+  // Render the editor for the first time
+  sophia._loadFromHash();
   hierarchyEditor.render();
 
   // Hash navigation management
   window.addEventListener('hashchange', function(event) {
+    sophia._loadFromHash();
     console.log('The hash has changed!');
     console.log('Old URL:', event.oldURL);
     console.log('New URL:', event.newURL);

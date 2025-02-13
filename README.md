@@ -57,14 +57,15 @@ Then navigate your browser to `http://localhost:8123`
 - ✅ Nodes should have UUIDs
 - ✅ Thought View Breakdown
 - ✅ Download tree files
-- Hash based loading with SQLite3 node id indexing
+- ✅ Hash based loading with SQLite3 node id indexing (Nope: opted for `share-` syntax in client side then run a load from the name that comes after)
+    - Included share link in Options menu under Save
 - User accounts and folders
 - Node tagging based on links (use a link metadata for quick search lookup)
 - ✅ Remapping links and full concurrent body rewrite queue
 - Multilinguality
 - Multimodality with Drag & Drop for modal inputs
-- Code block cleanup
-    - Copy function for code blocks and full message markdown
+- ✅ Code block cleanup
+    - ✅ Copy function for code blocks and full message markdown
 - ✅ Fix prompt history selection on mobile
 - ✅ Showing multiline metadata properly
 - Some sort of Tree selector for modals
@@ -75,10 +76,11 @@ Then navigate your browser to `http://localhost:8123`
 - On serialization of hierarchyEditor, make it use parent.id instead of null
 - ✅ Ability to select text and use that as the prompt
 - Cross-Branch Easy linking
+    - Add to the context toolbar a select box for the branches
+- upon saving need to write config to the root node before save
 
 ### SysOps
 - ✅ Fixing HTTPS on the demo
-- Finish SQLite3 ORM in back-end with tree diff and entity filesystem indexing
 
 ### Server-Side
 - Search Capability for web search

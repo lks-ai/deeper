@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from util import think, fetch_models, load_defaults
+from util import PATH, think, fetch_models, load_defaults
 
 app = FastAPI()
 
@@ -49,8 +49,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-PATH = 'data/'
 
 class ThinkRequest(BaseModel):
     prompt: str

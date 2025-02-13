@@ -1,5 +1,7 @@
 from prowl import ProwlStack, prowl
 
+PATH = 'data/'
+
 models = [
     'qwen/qwen-2.5-7b-instruct',
     'mistralai/mixtral-8x7b-instruct',
@@ -58,3 +60,4 @@ def load_defaults() -> dict:
         except yaml.YAMLError as exc:
             print(exc)
             raise
+

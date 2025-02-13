@@ -101,7 +101,7 @@
             // Node types (an object keyed by type name).
             this.nodeTypes = {};
             
-            this.render();
+            // this.render();
             
             // Update SVG connectors on window resize.
             window.addEventListener("resize", () => this.updateConnections());
