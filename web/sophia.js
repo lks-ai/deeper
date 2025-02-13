@@ -297,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
   hierarchyEditor.treeData.body = `Use thinking AI to quickly build a wiki on anything. Great for **research**, **taxonomies**, **mind mapping** and **note taking**.
   [GitHub](https://github.com/lks-ai/deeper) | [By LKS](https://lks.ltd)
 
-  *Begin the conversation by sending a message about the root topic, [checking our guide](#26fbaf49-5e44-4-58b-fedf-b-8fd31a171b71) or clicking one of the bold links*
+  *Begin the conversation by sending a message about the root topic, [checking our guide](#share-DeepR) or clicking one of the bold links*
   `;
 
   /*
