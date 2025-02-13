@@ -80,7 +80,8 @@ Then navigate your browser to `http://localhost:8123`
 - upon saving need to write config to the root node before save
 - Multi-directional rewriting
     - Gives ability to rewrite the content of a node based on the content of it's children
-        - rewrite based on tags over all children (multichildren match rewrite queueing)
+        - tag check: rewrite based on tags over all children (multichildren match rewrite queueing) This happens on rewriting with new links in bold
+        - on tag check, also check for non-existing links on page load and bold them back out
     - ✅ rewrite content based on peers (setup after body renders on send response)
 
 ### SysOps

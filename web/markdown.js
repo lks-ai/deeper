@@ -1,8 +1,8 @@
 /*!
  * markdown.js – A standalone browser‐based Markdown parser with LaTeX support.
- * Supports headings, paragraphs, lists, tables, links, images, code blocks,
- * inline code, blockquotes, horizontal rules, LaTeX (inline & display), and
- * customizable rewriting (e.g. for bold text).
+ * Supports headings, paragraphs, lists (with nested indentation and continuous numbering),
+ * tables, links, images, code blocks, inline code, blockquotes, horizontal rules,
+ * LaTeX (inline & display), and customizable rewriting (e.g. for bold text).
  *
  * Usage:
  *   // Using as a module:
@@ -75,7 +75,7 @@
     // 0. Mask out fenced code blocks.
     var codeBlockMap = {};
     var codeBlockIndex = 0;
-    // The regex expects three backticks, optional tag on the same line, then a newline.
+    // The regex expects three backticks, an optional tag on the same line, then a newline.
     text = text.replace(/```([^\n]*)\n([\s\S]*?)```/g, function(match, tag, code) {
       var placeholder = "%%CODEBLOCK_" + codeBlockIndex++ + "%%";
       codeBlockMap[placeholder] = {
@@ -109,7 +109,7 @@
       return '<blockquote>' + content.trim() + '</blockquote>';
     });
 
-    // 6. Lists: Process unordered (-, +, *) and ordered (number.) lists.
+    // 6. Process lists with nested indentation and continuous numbering.
     text = processLists(text);
 
     // 7. Tables: A simple table implementation (detects blocks with pipes).
@@ -144,7 +144,7 @@
       }
     });
 
-    // 8. Inline code: Single backticks. Render as a span with styling.
+    // 8. Inline code: Single backticks – rendered as a span.
     text = text.replace(/`([^`]+)`/g, function(match, code) {
       return '<span class="inline-code">' + escapeHtml(code) + '</span>';
     });
@@ -218,47 +218,114 @@
   }
 
   /**
-   * processLists – Process markdown lists (both unordered and ordered).
+   * processLists – Process markdown lists with support for nested lists and continuous numbering.
+   *
+   * In this revised version we build a tree of list items. When a line with increased
+   * indentation is encountered, it is attached as a nested list (child) of the previous item.
    *
    * @param {string} text - The markdown text.
    * @return {string} - The text with list blocks converted to HTML.
    */
   function processLists(text) {
     var lines = text.split('\n');
-    var newLines = [];
-    var listBuffer = [];
-    var listType = null; // "ul" or "ol"
-
-    function flushList() {
-      if (listBuffer.length > 0) {
-        newLines.push('<' + listType + '>');
-        listBuffer.forEach(function (item) {
-          newLines.push('<li>' + item.trim() + '</li>');
-        });
-        newLines.push('</' + listType + '>');
-        listBuffer = [];
-        listType = null;
+    var output = [];
+    var stack = []; // Each element is a context: { indent, type, items }
+    
+    // Render a list context (or a nested list tree) into HTML.
+    function renderList(ctx) {
+      var tag = ctx.type === 'ol' ? 'ol' : 'ul';
+      var html = '<' + tag + '>';
+      ctx.items.forEach(function(item) {
+        if (typeof item === "string") {
+          html += '<li>' + item + '</li>';
+        } else if (typeof item === "object") {
+          // item is an object: { content, children }
+          html += '<li>' + item.content;
+          if (item.children && item.children.length > 0) {
+            item.children.forEach(function(childCtx) {
+              html += renderList(childCtx);
+            });
+          }
+          html += '</li>';
+        }
+      });
+      html += '</' + tag + '>';
+      return html;
+    }
+    
+    // Process each line.
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var unorderedMatch = line.match(/^(\s*)([-+*])\s+(.*)$/);
+      var orderedMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
+      if (unorderedMatch || orderedMatch) {
+        var indent = (unorderedMatch ? unorderedMatch[1] : orderedMatch[1]).length;
+        var type = unorderedMatch ? 'ul' : 'ol';
+        var content = unorderedMatch ? unorderedMatch[3] : orderedMatch[3];
+        
+        // If no active list context, start one.
+        if (stack.length === 0) {
+          stack.push({ indent: indent, type: type, items: [ content ] });
+        } else {
+          var top = stack[stack.length - 1];
+          if (indent > top.indent) {
+            // New (nested) list: attach to the previous list item.
+            // Ensure the previous item is an object.
+            if (typeof top.items[top.items.length - 1] === "string") {
+              top.items[top.items.length - 1] = { content: top.items[top.items.length - 1], children: [] };
+            }
+            // Push a new context for the nested list.
+            stack.push({ indent: indent, type: type, items: [ content ] });
+          } else {
+            // Pop contexts until the top has indent less than or equal to current.
+            while (stack.length > 0 && indent < stack[stack.length - 1].indent) {
+              var completed = stack.pop();
+              if (stack.length > 0) {
+                // Attach the completed nested list as a child of the last item of the new top.
+                var newTop = stack[stack.length - 1];
+                if (typeof newTop.items[newTop.items.length - 1] === "string") {
+                  newTop.items[newTop.items.length - 1] = { content: newTop.items[newTop.items.length - 1], children: [] };
+                }
+                newTop.items[newTop.items.length - 1].children.push(completed);
+              } else {
+                output.push(renderList(completed));
+              }
+            }
+            // If the current level matches the top level and types differ, flush the top.
+            if (stack.length > 0 && stack[stack.length - 1].indent === indent && stack[stack.length - 1].type !== type) {
+              var completed = stack.pop();
+              if (stack.length > 0) {
+                var newTop = stack[stack.length - 1];
+                if (typeof newTop.items[newTop.items.length - 1] === "string") {
+                  newTop.items[newTop.items.length - 1] = { content: newTop.items[newTop.items.length - 1], children: [] };
+                }
+                newTop.items[newTop.items.length - 1].children.push(completed);
+              } else {
+                output.push(renderList(completed));
+              }
+              stack.push({ indent: indent, type: type, items: [ content ] });
+            } else if (stack.length > 0 && stack[stack.length - 1].indent === indent) {
+              // Same level: just add the item.
+              stack[stack.length - 1].items.push(content);
+            } else {
+              // Otherwise, start a new context.
+              stack.push({ indent: indent, type: type, items: [ content ] });
+            }
+          }
+        }
+      } else {
+        // Non-list line: flush any active list contexts.
+        while (stack.length > 0) {
+          output.push(renderList(stack.pop()));
+        }
+        output.push(line);
       }
     }
-
-    lines.forEach(function (line) {
-      var ulMatch = line.match(/^\s*([-+*])\s+(.*)$/);
-      var olMatch = line.match(/^\s*\d+\.\s+(.*)$/);
-      if (ulMatch) {
-        if (listType && listType !== 'ul') { flushList(); }
-        listType = 'ul';
-        listBuffer.push(ulMatch[2]);
-      } else if (olMatch) {
-        if (listType && listType !== 'ol') { flushList(); }
-        listType = 'ol';
-        listBuffer.push(olMatch[1]);
-      } else {
-        flushList();
-        newLines.push(line);
-      }
-    });
-    flushList();
-    return newLines.join('\n');
+    // Flush remaining contexts.
+    while (stack.length > 0) {
+      output.push(renderList(stack.pop()));
+    }
+    return output.join('\n');
   }
 
   // Expose the Markdown constructor.
