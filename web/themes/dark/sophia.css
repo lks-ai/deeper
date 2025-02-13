@@ -87,7 +87,6 @@ h1, h2, h3, h4, h5, h6, .node-title {
 }
 
 code {
-    background: rgba(0, 128, 255, 0.15); /* Subtle blue tint */
     padding: 0.2em;
     border-radius: 0.3em;
 }

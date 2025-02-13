@@ -149,6 +149,13 @@ document.addEventListener("DOMContentLoaded", () => {
               <select id="agent" onchange="sophia.setAgentConfig(this.value);">${sophia.compileAgentSelect()}</select>
             </li>
             <li>
+              <label>Download</label><br>
+              <div>
+                <button onclick="sophia.download(document.getElementById('save-name').value); hideModal();" title="Saves currently selected branch as a tree">Download Branch</button> &nbsp;
+                <button onclick="sophia.download(document.getElementById('save-name').value, true); hideModal();" title="Saves entire tree">Download Root</button>
+              </div>
+            </li>
+            <li>
               <label>Save</label><br><input type="text" id="save-name" value="${sophia.treeName}" placeholder="Tree Name">
               <div>
                 <button onclick="sophia.saveData(document.getElementById('save-name').value); hideModal();" title="Saves currently selected branch as a tree">Save Branch</button> &nbsp;
@@ -541,6 +548,30 @@ document.addEventListener("DOMContentLoaded", () => {
       throw error;
     }
   }
+
+  sophia.download = function(name, globalScope = false) {
+    if (!name || name.length === 0) return;
+  
+    // Get the data as JSON string.
+    const dataObj = hierarchyEditor.toJson(!globalScope ? hierarchyEditor.getCurrentNode() : null);
+    const jsonData = JSON.stringify(dataObj, null, 2); // Optional pretty-printing
+  
+    // Create a Blob from the JSON data.
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+  
+    // Create an invisible anchor element and trigger a download.
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${name}.json`;
+    document.body.appendChild(a);
+    a.click();
+  
+    // Clean up.
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  
 
   window.sophia = sophia;
 

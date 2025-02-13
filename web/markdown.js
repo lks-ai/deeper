@@ -61,77 +61,75 @@
   // --- Internal parser implementation ---
 
   /**
-   * parseMarkdown – convert markdown to HTML.
+   * parseMarkdown – Convert markdown to HTML.
+   *
+   * This implementation first masks out fenced code blocks (multiline) so that
+   * no additional markdown transformations are applied within them. It then
+   * processes the rest of the markdown and finally unmasks the code blocks.
    *
    * @param {string} text - Markdown text.
    * @param {Object} options - Options (see Markdown constructor).
    * @return {string} HTML string.
    */
   function parseMarkdown(text, options) {
-    // We'll work in multiple passes.
-    // (Note: This implementation is simple and may not cover all edge cases.)
-
-    // 1. Process code blocks (fenced with ```).
-    text = text.replace(/```([\s\S]*?)```/g, function (match, code) {
-      // Escape HTML inside code blocks.
-      var esc = code.replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;");
-      return '<pre><code>' + esc + '</code></pre>';
+    // 0. Mask out fenced code blocks.
+    var codeBlockMap = {};
+    var codeBlockIndex = 0;
+    // The regex expects three backticks, optional tag on the same line, then a newline.
+    text = text.replace(/```([^\n]*)\n([\s\S]*?)```/g, function(match, tag, code) {
+      var placeholder = "%%CODEBLOCK_" + codeBlockIndex++ + "%%";
+      codeBlockMap[placeholder] = {
+        lang: tag.trim(), // may be empty
+        code: code
+      };
+      return placeholder;
     });
 
-    // 2. Process LaTeX display math: \[ ... \]
-    text = text.replace(/\\\[((?:.|\n)*?)\\\]/g, function (match, math) {
+    // 1. Process LaTeX display math: \[ ... \]
+    text = text.replace(/\\\[((?:.|\n)*?)\\\]/g, function(match, math) {
       return '<div class="math-display">' + math.trim() + '</div>';
     });
 
-    // 3. Process LaTeX inline math: \( ... \)
-    text = text.replace(/\\\(((?:.|\n)*?)\\\)/g, function (match, math) {
+    // 2. Process LaTeX inline math: \( ... \)
+    text = text.replace(/\\\(((?:.|\n)*?)\\\)/g, function(match, math) {
       return '<span class="math-inline">' + math.trim() + '</span>';
     });
 
-    // 4. Headings: Lines starting with one or more '#' characters.
-    text = text.replace(/^(#{1,6})\s*(.+)$/gm, function (match, hashes, content) {
+    // 3. Headings: Lines starting with one or more '#' characters.
+    text = text.replace(/^(#{1,6})\s*(.+)$/gm, function(match, hashes, content) {
       var level = hashes.length;
       return '<h' + level + '>' + content.trim() + '</h' + level + '>';
     });
 
-    // 5. Horizontal rules: lines containing at least 3 * or - characters.
+    // 4. Horizontal rules: lines containing at least 3 * or - characters.
     text = text.replace(/^\s*(\*{3,}|-{3,})\s*$/gm, '<hr>');
 
-    // 6. Blockquotes: Lines starting with one or more '>' characters.
-    text = text.replace(/^\s*>+\s?(.*)$/gm, function (match, content) {
+    // 5. Blockquotes: Lines starting with one or more '>' characters.
+    text = text.replace(/^\s*>+\s?(.*)$/gm, function(match, content) {
       return '<blockquote>' + content.trim() + '</blockquote>';
     });
 
-    // 7. Lists: We process unordered (-, +, *) and ordered (number.) lists.
+    // 6. Lists: Process unordered (-, +, *) and ordered (number.) lists.
     text = processLists(text);
 
-    // 8. Tables: A simple table implementation (detects blocks with pipes).
-    text = text.replace(/((?:\|.*\|(?:\n|$))+)/g, function (match, tableBlock) {
+    // 7. Tables: A simple table implementation (detects blocks with pipes).
+    text = text.replace(/((?:\|.*\|(?:\n|$))+)/g, function(match, tableBlock) {
       var rows = tableBlock.trim().split('\n');
-      // Look for a separator line in the second row.
       if (rows.length > 1 && rows[1].match(/^\s*\|?(?:\s*:?-+:?\s*\|)+\s*$/)) {
         var html = '<table>';
-        // Header row.
-        var headerCells = rows[0].split('|').map(function (cell) {
-          return cell.trim();
-        }).filter(function (cell) { return cell; });
+        var headerCells = rows[0].split('|').map(function(cell) { return cell.trim(); }).filter(function(cell){ return cell; });
         html += '<thead><tr>';
-        headerCells.forEach(function (cell) {
+        headerCells.forEach(function(cell) {
           html += '<th>' + cell + '</th>';
         });
         html += '</tr></thead>';
-        // Data rows.
         if (rows.length > 2) {
           html += '<tbody>';
           for (var r = 2; r < rows.length; r++) {
-            var rowCells = rows[r].split('|').map(function (cell) {
-              return cell.trim();
-            }).filter(function (cell) { return cell; });
+            var rowCells = rows[r].split('|').map(function(cell) { return cell.trim(); }).filter(function(cell) { return cell; });
             if (rowCells.length) {
               html += '<tr>';
-              rowCells.forEach(function (cell) {
+              rowCells.forEach(function(cell) {
                 html += '<td>' + cell + '</td>';
               });
               html += '</tr>';
@@ -146,30 +144,25 @@
       }
     });
 
-    // 9. Inline code: `code`
-    text = text.replace(/`([^`]+)`/g, function (match, code) {
-      var esc = code.replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;");
-      return '<code>' + esc + '</code>';
+    // 8. Inline code: Single backticks. Render as a span with styling.
+    text = text.replace(/`([^`]+)`/g, function(match, code) {
+      return '<span class="inline-code">' + escapeHtml(code) + '</span>';
     });
 
-    // 10. Links: [text](url "optional title")
-    text = text.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, function (match, linkText, url, title) {
+    // 9. Links: [text](url "optional title")
+    text = text.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, function(match, linkText, url, title) {
       var titleAttr = title ? ' title="' + title + '"' : '';
-      var linkTarget = options.linkTarget || '';
-      return '<a' + linkTarget + ' href="' + url + '"' + titleAttr + '>' + linkText + '</a>';
+      return '<a href="' + url + '"' + titleAttr + '>' + linkText + '</a>';
     });
 
-    // 11. Images: ![alt text](url "optional title")
-    text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, function (match, alt, url, title) {
+    // 10. Images: ![alt text](url "optional title")
+    text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, function(match, alt, url, title) {
       var titleAttr = title ? ' title="' + title + '"' : '';
       return '<img src="' + url + '" alt="' + alt + '"' + titleAttr + ' />';
     });
 
-    // 12. Bold text: **text** or __text__
-    text = text.replace(/(\*\*|__)(.*?)\1/g, function (match, delim, content) {
-      // If the user provided custom prefix/suffix or a replacer function, use that.
+    // 11. Bold text: **text** or __text__
+    text = text.replace(/(\*\*|__)(.*?)\1/g, function(match, delim, content) {
       if ((options.boldPrefix || options.boldSuffix)) {
         var prefix = options.boldPrefix || '';
         var suffix = options.boldSuffix || '';
@@ -181,26 +174,51 @@
       }
     });
 
-    // 13. Italic text: *text* or _text_
-    // (Simple: we don’t try to disambiguate from bold here.)
-    text = text.replace(/(\*|_)(.*?)\1/g, function (match, delim, content) {
+    // 12. Italic text: *text* or _text_
+    text = text.replace(/(\*|_)(.*?)\1/g, function(match, delim, content) {
       return '<em>' + content + '</em>';
     });
 
-    // 14. Paragraphs: Wrap blocks that aren’t already block-level elements.
-    text = text.split(/\n{2,}/).map(function (block) {
-      // If block already starts with a block-level tag, don’t wrap.
+    // 13. Paragraphs: Wrap blocks that aren’t already block-level elements.
+    text = text.split(/\n{2,}/).map(function(block) {
+      if (block.trim().match(/^%%CODEBLOCK_\d+%%$/)) {
+        return block.trim();
+      }
       if (block.match(/^\s*<(h\d|ul|ol|pre|blockquote|table|div|img|p|code|hr)/)) {
         return block;
       }
       return '<p>' + block.trim() + '</p>';
     }).join('\n\n');
 
+    // 14. Unmask the code blocks.
+    for (var placeholder in codeBlockMap) {
+      if (codeBlockMap.hasOwnProperty(placeholder)) {
+        var cb = codeBlockMap[placeholder];
+        var escapedCode = escapeHtml(cb.code);
+        var titleBar = cb.lang ? '<div class="code-block-title">' + escapeHtml(cb.lang) + '</div>' : '';
+        var codeHtml = '<div class="code-block-container">' +
+                         titleBar +
+                         '<button class="copy-btn" onclick="Markdown.copyCode(this)">Copy</button>' +
+                         '<pre><code>' + escapedCode + '</code></pre>' +
+                       '</div>';
+        text = text.replace(placeholder, codeHtml);
+      }
+    }
+    
     return text;
   }
 
+  // Helper: Escape HTML special characters.
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;")
+               .replace(/</g, "&lt;")
+               .replace(/>/g, "&gt;")
+               .replace(/"/g, "&quot;")
+               .replace(/'/g, "&#39;");
+  }
+
   /**
-   * processLists – process markdown lists (both unordered and ordered).
+   * processLists – Process markdown lists (both unordered and ordered).
    *
    * @param {string} text - The markdown text.
    * @return {string} - The text with list blocks converted to HTML.
@@ -244,5 +262,44 @@
   }
 
   // Expose the Markdown constructor.
+  // Additionally, add a helper for copying code blocks.
+  Markdown.copyCode = function(btn) {
+    var container = btn.parentNode;
+    var codeElem = container.querySelector('pre code');
+    if (codeElem) {
+      var textToCopy = codeElem.textContent;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(function() {
+          var originalText = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(function() {
+            btn.textContent = originalText;
+          }, 2000);
+        }, function(err) {
+          console.error("Could not copy text: ", err);
+        });
+      } else {
+        // Fallback for older browsers.
+        var textarea = document.createElement("textarea");
+        textarea.value = textToCopy;
+        textarea.style.position = "fixed";  // Prevent scrolling.
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          var originalText = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(function() {
+            btn.textContent = originalText;
+          }, 2000);
+        } catch (err) {
+          console.error("Fallback: Unable to copy", err);
+        }
+        document.body.removeChild(textarea);
+      }
+    }
+  };
+
   return Markdown;
 }));

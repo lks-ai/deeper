@@ -23,7 +23,7 @@ async def think(prompt:str, model=None, agent=None, language='English'):
     model = model or models[0]
     try:
         stack = ProwlStack(folder=folders, silent=False) #, stream_level=prowl.StreamLevel.VARIABLE, variable_event=stop_early)
-        r:prowl.Return = await stack.run(['identity', 'input', 'think'], inputs={'user_request': prompt}, model=model)
+        r:prowl.Return = await stack.run(['identity', 'input', 'think'], inputs={'user_request': prompt}, model=model, stops=['</think>', '\n\n'])
         # TODO Introduce early stopping based on streaming
         d = r.get()
         thoughts = r.var('thought').hist()

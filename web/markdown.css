@@ -25,20 +25,58 @@
   margin: 1em 0;
 }
 
-/* Code */
-.markdown code {
-  background-color: #f8f8f8;
+/* Inline code (single backticks) */
+.inline-code {
+  background-color: #ff00e330;
   padding: 2px 4px;
   border-radius: 3px;
   font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
 }
 
-/* Code blocks */
-.markdown pre {
-  background-color: #f8f8f8;
-  padding: 1em;
-  overflow: auto;
+/* Code blocks container */
+.code-block-container {
+  position: relative;
+  margin: 1em 0;
+  border: 1px solid #ddd;
   border-radius: 3px;
+  overflow: hidden;
+}
+
+/* Code block title bar */
+.code-block-title {
+  background-color: #187aa179;
+  padding: 4px 8px;
+  font-size: 0.9em;
+  font-family: "Courier New", Courier, monospace;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Code blocks */
+.code-block-container pre {
+  background-color: #7c7c7c24;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* Copy button for code blocks */
+.copy-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #007acc;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.8em;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.copy-btn:hover {
+  opacity: 1;
 }
 
 /* Blockquotes */
@@ -70,7 +108,7 @@
 }
 
 .markdown th {
-  background-color: #f0f0f0;
+  background-color: #7c7c7c24;
 }
 
 /* Horizontal rule */
@@ -85,7 +123,7 @@
   font-style: italic;
   color: #003366;
   padding: 0 0.2em;
-  background-color: #f0f8ff;
+  background-color: #7c7c7c24;
 }
 
 .markdown .math-display {
@@ -93,6 +131,6 @@
   margin: 1em 0;
   font-style: italic;
   color: #003366;
-  background-color: #f0f8ff;
+  background-color: #7c7c7c24;
   padding: 0.5em;
 }

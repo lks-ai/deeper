@@ -51,15 +51,15 @@ Then navigate your browser to `http://localhost:8123`
 ### UI
 - Swipe left and right: swipe through peers, or if all the way left, swipe to parent, all the way right on breadcrumb? swipe to first child
 - ✅ Select which model to run (Agents)
-- Control the agent prompts within the interface
-    - Each agent has it's own folder in prompts with overrides
+- ✅ Control the agent prompts within the interface
+    - ✅ Each agent has it's own server-side folder in prompts with overrides
 - ✅ Hash based navigation (browser history plus UX control URL<->UX)
 - ✅ Nodes should have UUIDs
 - ✅ Thought View Breakdown
-- Download tree files
+- ✅ Download tree files
 - Hash based loading with SQLite3 node id indexing
 - User accounts and folders
-- Node naming based on links (use a link metadata for quick search lookup)
+- Node tagging based on links (use a link metadata for quick search lookup)
 - ✅ Remapping links and full concurrent body rewrite queue
 - Multilinguality
 - Multimodality with Drag & Drop for modal inputs
