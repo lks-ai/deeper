@@ -78,6 +78,10 @@ Then navigate your browser to `http://localhost:8123`
 - Cross-Branch Easy linking
     - Add to the context toolbar a select box for the branches
 - upon saving need to write config to the root node before save
+- Multi-directional rewriting
+    - Gives ability to rewrite the content of a node based on the content of it's children
+        - rewrite based on tags over all children (multichildren match rewrite queueing)
+    - ✅ rewrite content based on peers (setup after body renders on send response)
 
 ### SysOps
 - ✅ Fixing HTTPS on the demo
@@ -87,14 +91,10 @@ Then navigate your browser to `http://localhost:8123`
 - Browsing capability
 - Agent Prompts for (coder, roleplayer, etc)
 - Tree based Prompt templates (graft a branch, re-generate full branch with nulled bodies)
-- Multi-directional rewriting
-    - Gives ability to rewrite the content of a node based on the content of it's children
-    - rewrite content based on peers
-    - rewrite content based on sequential progression
-    - rewr
 - Mult-directional context stacking
     - currently it's just a straight path directly from the root to the leaf
     - could have a mode where it sequentially stacks any peer nodes before it
+    - OR, base it on the cross-peer links which can exist inside of the content for the current node!!!! (that' the play)
 - Multimedia content
     - Making sure to safely allow html
 - Auto-Agent Switching

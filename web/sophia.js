@@ -453,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (label) {
         targetNode.metadata.tag = trim(label, ':*#,.-');
         hierarchyEditor.queueRewrite(
-          parentNode,
+          [parentNode],
           `**${label}**`,
           `[${label}](#${targetNode.id})`
         );
@@ -497,6 +497,16 @@ document.addEventListener("DOMContentLoaded", () => {
       let cleanName = result.label.replace('Knowledge Label:', '')
       targetNode.name = trim(cleanName, '- ');
       targetNode.body = result.response;
+
+      // Perform peer rewrites using the targetNode.metadata.tag to make them link here.
+      if (targetNode.metadata.tag){
+        let tag = targetNode.metadata.tag;
+        hierarchyEditor.queueRewrite(
+          hierarchyEditor.getPeers(targetNode, true),
+          `**${tag}**`,
+          `[${tag}](#${targetNode.id})`
+        );
+      }
 
       // Set the interface as "touched"
       sophia.dirty = true;
@@ -600,9 +610,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Hash navigation management
   window.addEventListener('hashchange', function(event) {
     sophia._loadFromHash();
-    console.log('The hash has changed!');
-    console.log('Old URL:', event.oldURL);
-    console.log('New URL:', event.newURL);
     // Navigate the hierarchy to the new node by Id
     let parts = event.newURL.split('#', 2);
     hierarchyEditor.navigateToNodeById(parts[1]);

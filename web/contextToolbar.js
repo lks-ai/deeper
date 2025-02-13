@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function handleSelectionEnd(event) {
       const selection = window.getSelection();
       const selectedText = selection.toString().trim();
-      console.log(`Selection ended. You selected: "${selectedText}"`);
+      // console.log(`Selection ended. You selected: "${selectedText}"`);
   
       // If there is no text selected, remove any existing toolbar and exit.
       if (!selectedText) {

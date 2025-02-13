@@ -227,6 +227,17 @@
         getCurrentNode(){
             return this.currentFocusPath[this.currentFocusPath.length - 1];
         }
+
+        getPeers(node, includeSelf=false){
+            if (node.parent){
+                if (!includeSelf){
+                    return node.parent.children - [node];
+                }else{
+                    return node.parent.children;
+                }
+            }
+            return null;
+        }
         
         getNodeTypeData(node){
             return this.getNodeType(node.type) || { label: "Node" };
@@ -801,9 +812,13 @@
         */
         processRewriteQueue() {
             while (this.rewriteQueue.length > 0) {
-                const { node, fromStr, toStr } = this.rewriteQueue.shift();
-                if (node && typeof node.body === "string") {
-                    node.body = node.body.replaceAll(fromStr, toStr);
+                let { node, fromStr, toStr } = this.rewriteQueue.shift();
+                if (!node.length) node = [node];
+                for (let i = 0; i < node.length; i++){
+                    let n = node[i];
+                    if (n && typeof n.body === "string") {
+                        n.body = n.body.replaceAll(fromStr, toStr);
+                    }
                 }
             }
         }
