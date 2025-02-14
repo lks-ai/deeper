@@ -1001,29 +1001,38 @@
       
         // Determine swipe direction and call appropriate navigation function
         function handleGesture() {
-          const deltaX = touchEndX - touchStartX;
-          const deltaY = touchEndY - touchStartY;
-          const threshold = 30; // Minimum distance (in pixels) for a swipe
-      
-          if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // Horizontal swipe
-            if (deltaX > threshold) {
-              // Swipe right
-              window.hierarchyEditor.navigateRight();
-            } else if (deltaX < -threshold) {
-              // Swipe left
-              window.hierarchyEditor.navigateLeft();
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            const threshold = 30; // Minimum distance (in pixels) for a swipe
+        
+            // Determine the dominant swipe direction.
+            if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+              // Horizontal swipe is dominant
+              if (deltaX > threshold) {
+                // Swipe right detected
+                window.hierarchyEditor.navigateLeft();
+              } else if (deltaX < -threshold) {
+                // Swipe left detected
+                window.hierarchyEditor.navigateRight();
+              }
+            } else {
+              // Vertical swipe is dominant
+              if (deltaY > threshold) {
+                // Swipe down detected; trigger only if scrolled to the bottom
+                const scrollPosition = window.innerHeight + window.scrollY;
+                const totalHeight = document.documentElement.scrollHeight;
+                if (scrollPosition >= totalHeight) {
+                  window.hierarchyEditor.navigateDown();
+                }
+              } else if (deltaY < -threshold) {
+                // Swipe up detected; call navigateUp if available
+                if (typeof window.hierarchyEditor.navigateUp === "function") {
+                  window.hierarchyEditor.navigateUp();
+                }
+              }
             }
-          } else {
-            // Vertical swipe
-            if (deltaY > threshold) {
-              // Swipe down
-              window.hierarchyEditor.navigateDown();
-            }
-            // Upward swipe can be handled here if desired.
           }
-        }
-      });
+        });
       
 
     window.HierarchyEditor = HierarchyEditor;
