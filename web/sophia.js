@@ -63,7 +63,7 @@ function hideModal(){
 }
 
 // For use when clicking bold links to give it some rizz
-function oneUpEffect(element) {
+function oneUpEffect(element, direction='up') {
   // Get the bounding rectangle of the clicked element.
   const rect = element.getBoundingClientRect();
 
@@ -87,7 +87,13 @@ function oneUpEffect(element) {
   void clone.offsetWidth;
 
   // Animate: move the clone upward and fade it out.
-  clone.style.transform = "translateY(-4em)";
+  if (direction == 'up'){
+    clone.style.transform = "translateY(-4em)";
+  } else if (direction == 'left'){
+    clone.style.transform = "translateX(-4em)";
+  } else if (direction == 'right'){
+    clone.style.transform = "translateX(4em)";
+  }
   clone.style.opacity = "0";
 
   // Once the animation is complete, remove the clone from the DOM.
@@ -193,6 +199,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // Register a hook for when the edit form is submitted.
   window.hierarchyEditor.on("editFormSubmitted", (data) => {
     console.log("Edit form submitted for:", data.node);
+  });
+
+  // Hook for swiping left
+  window.hierarchyEditor.on("navigateRight", (data) => {
+    oneUpEffect(hierarchyEditor.nodeEditor, 'left');
+  });
+
+  // Hook for swiping right
+  window.hierarchyEditor.on("navigateLeft", (data) => {
+    oneUpEffect(hierarchyEditor.nodeEditor, 'right');
   });
 
   // Thought Section

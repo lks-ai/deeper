@@ -799,14 +799,15 @@
             const index = siblings.indexOf(current);
 
             if (index > 0) {
-            // Focus the previous sibling.
-            const newFocusPath = this.currentFocusPath.slice(0, -1);
-            newFocusPath.push(siblings[index - 1]);
-            this.currentFocusPath = newFocusPath;
+                // Focus the previous sibling.
+                const newFocusPath = this.currentFocusPath.slice(0, -1);
+                newFocusPath.push(siblings[index - 1]);
+                this.currentFocusPath = newFocusPath;
             } else {
-            // No previous sibling; move up to the parent.
-            this.currentFocusPath.pop();
+                // No previous sibling; move up to the parent.
+                this.currentFocusPath.pop();
             }
+            this.triggerHook('navigateLeft', current);
             this.render();
         }
 
@@ -824,10 +825,11 @@
             const index = siblings.indexOf(current);
 
             if (index < siblings.length - 1) {
-            const newFocusPath = this.currentFocusPath.slice(0, -1);
-            newFocusPath.push(siblings[index + 1]);
-            this.currentFocusPath = newFocusPath;
-            this.render();
+                const newFocusPath = this.currentFocusPath.slice(0, -1);
+                newFocusPath.push(siblings[index + 1]);
+                this.currentFocusPath = newFocusPath;
+                this.triggerHook('navigateRight', current);
+                this.render();
             }
         }
 
@@ -839,20 +841,22 @@
         navigateDown() {
             const current = this.currentFocusPath[this.currentFocusPath.length - 1];
             if (current.children && current.children.length > 0) {
-            // If there are children, navigate to the first child.
-            this.currentFocusPath.push(current.children[0]);
-            this.render();
-            } else {
-            // Otherwise, find the next node in DFS order.
-            const next = this._getNextNode(current);
-            if (next) {
-                // Update the focus path to the path leading from the root to the next node.
-                const newPath = this._findPathToNode(this.treeData, next.id);
-                if (newPath) {
-                this.currentFocusPath = newPath;
+                // If there are children, navigate to the first child.
+                this.currentFocusPath.push(current.children[0]);
+                this.triggerHook('navigateDown', current);
                 this.render();
+            } else {
+                // Otherwise, find the next node in DFS order.
+                const next = this._getNextNode(current);
+                if (next) {
+                    // Update the focus path to the path leading from the root to the next node.
+                    const newPath = this._findPathToNode(this.treeData, next.id);
+                    if (newPath) {
+                        this.currentFocusPath = newPath;
+                        this.triggerHook('navigateDown', current);
+                        this.render();
+                    }
                 }
-            }
             }
         }
 
