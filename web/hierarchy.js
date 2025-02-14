@@ -983,7 +983,11 @@
         let touchStartY = 0;
         let touchEndX = 0;
         let touchEndY = 0;
-      
+        let touchStartTime = 0;
+        let touchEndTime = 0;
+        const threshold = 30; // Minimum swipe distance (in pixels)
+        const maxDuration = 300; // Maximum duration (in ms) for a fast swipe
+            
         // Set up touch start listener
         nodeEditor.addEventListener("touchstart", function(e) {
           const touch = e.changedTouches[0];
@@ -1003,9 +1007,14 @@
         function handleGesture() {
             const deltaX = touchEndX - touchStartX;
             const deltaY = touchEndY - touchStartY;
-            const threshold = 30; // Minimum distance (in pixels) for a swipe
+            const duration = touchEndTime - touchStartTime;
         
-            // Determine the dominant swipe direction.
+            // Only process fast swipes
+            if (duration > maxDuration) {
+                console.log("Swipe too slow, ignoring.");
+                return;
+            }
+              // Determine the dominant swipe direction.
             if (Math.abs(deltaX) >= Math.abs(deltaY)) {
               // Horizontal swipe is dominant
               if (deltaX > threshold) {
@@ -1021,18 +1030,21 @@
                 // Swipe down detected; trigger only if scrolled to the bottom
                 const scrollPosition = window.innerHeight + window.scrollY;
                 const totalHeight = document.documentElement.scrollHeight;
-                if (scrollPosition >= totalHeight) {
+                if (scrollPosition >= totalHeight - threshold) {
                   window.hierarchyEditor.navigateDown();
                 }
               } else if (deltaY < -threshold) {
                 // Swipe up detected; call navigateUp if available
-                if (typeof window.hierarchyEditor.navigateUp === "function") {
-                  window.hierarchyEditor.navigateUp();
+                const scrollPosition = window.innerHeight + window.scrollY;
+                if (scrollPosition <= 0){
+                    if (typeof window.hierarchyEditor.navigateUp === "function") {
+                        window.hierarchyEditor.navigateUp();
+                    }
                 }
               }
             }
-          }
-        });
+        }
+    });
       
 
     window.HierarchyEditor = HierarchyEditor;
