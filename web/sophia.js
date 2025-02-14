@@ -276,6 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Or use prefix/suffix:
     boldReplacer: function(text){ 
       let node = hierarchyEditor.getCurrentNode();
+      text = trim(text, '":\'').replace("'", "\\'");
       return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send('${node.id}', '${text}', createChild=true, label='${text}');"><strong>${text}</strong></a>`;
     },
     // boldPrefix: '<a href="#" on>',
