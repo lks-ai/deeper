@@ -993,6 +993,7 @@
           const touch = e.changedTouches[0];
           touchStartX = touch.screenX;
           touchStartY = touch.screenY;
+          touchStartTime = Date.now();
         }, false);
       
         // Set up touch end listener
@@ -1000,6 +1001,7 @@
           const touch = e.changedTouches[0];
           touchEndX = touch.screenX;
           touchEndY = touch.screenY;
+          touchEndTime = Date.now();
           handleGesture();
         }, false);
       
