@@ -252,6 +252,17 @@
             this.currentConfig = curConfig;
             return curConfig;
         }
+
+        getConfigValue(node, key){
+            let parent = node;
+            while (parent){
+                if (parent.config.hasOwnProperty(key)){
+                    return parent.config[key];
+                }
+                parent = parent.parent;
+            }
+            return null;
+        }
         
         render(from=null) {
             // Update background image if current node has an image_url.
@@ -774,6 +785,113 @@
                 console.error(`Node with id "${id}" not found.`);
             }
         }
+        /**
+         * Navigate left:
+         * - If the current node has a previous sibling, focus that sibling.
+         * - Otherwise, focus the parent.
+         */
+        navigateLeft() {
+            if (this.currentFocusPath.length <= 1) return; // at root, nothing to do
+
+            const current = this.currentFocusPath[this.currentFocusPath.length - 1];
+            const parent = this.currentFocusPath[this.currentFocusPath.length - 2];
+            const siblings = parent.children;
+            const index = siblings.indexOf(current);
+
+            if (index > 0) {
+            // Focus the previous sibling.
+            const newFocusPath = this.currentFocusPath.slice(0, -1);
+            newFocusPath.push(siblings[index - 1]);
+            this.currentFocusPath = newFocusPath;
+            } else {
+            // No previous sibling; move up to the parent.
+            this.currentFocusPath.pop();
+            }
+            this.render();
+        }
+
+        /**
+         * Navigate right:
+         * - If the current node has a next sibling, focus that sibling.
+         * - Otherwise, do nothing.
+         */
+        navigateRight() {
+            if (this.currentFocusPath.length <= 1) return; // at root, nothing to do
+
+            const current = this.currentFocusPath[this.currentFocusPath.length - 1];
+            const parent = this.currentFocusPath[this.currentFocusPath.length - 2];
+            const siblings = parent.children;
+            const index = siblings.indexOf(current);
+
+            if (index < siblings.length - 1) {
+            const newFocusPath = this.currentFocusPath.slice(0, -1);
+            newFocusPath.push(siblings[index + 1]);
+            this.currentFocusPath = newFocusPath;
+            this.render();
+            }
+        }
+
+        /**
+         * Navigate down:
+         * - If the current node has children, focus its first child.
+         * - Otherwise, find the next node in a depth-first (DFS) order and focus it.
+         */
+        navigateDown() {
+            const current = this.currentFocusPath[this.currentFocusPath.length - 1];
+            if (current.children && current.children.length > 0) {
+            // If there are children, navigate to the first child.
+            this.currentFocusPath.push(current.children[0]);
+            this.render();
+            } else {
+            // Otherwise, find the next node in DFS order.
+            const next = this._getNextNode(current);
+            if (next) {
+                // Update the focus path to the path leading from the root to the next node.
+                const newPath = this._findPathToNode(this.treeData, next.id);
+                if (newPath) {
+                this.currentFocusPath = newPath;
+                this.render();
+                }
+            }
+            }
+        }
+
+        /**
+         * Helper: Returns the next node in depth-first order after the given node.
+         * Looks for a next sibling, or climbs the tree until a next sibling is found.
+         * Returns null if none exists.
+         *
+         * @param {object} node - The current node.
+         * @returns {object|null} - The next node in DFS order, or null.
+         */
+        _getNextNode(node) {
+            if (node.parent) {
+            const siblings = node.parent.children;
+            const index = siblings.indexOf(node);
+            if (index < siblings.length - 1) {
+                // Next sibling exists.
+                return siblings[index + 1];
+            } else {
+                // No next sibling, move up and try to find a parent's next sibling.
+                let current = node.parent;
+                while (current) {
+                if (current.parent) {
+                    const parentSiblings = current.parent.children;
+                    const currentIndex = parentSiblings.indexOf(current);
+                    if (currentIndex < parentSiblings.length - 1) {
+                    return parentSiblings[currentIndex + 1];
+                    }
+                    current = current.parent;
+                } else {
+                    break;
+                }
+                }
+            }
+            }
+            return null;
+        }
+
+        /**** Node creation and destruction ****/
         
         // Create a new node. (Each node now has a "type" and an "image_url" property.)
         createNode(content = "New Node", parent = null, type = null) {
@@ -796,6 +914,8 @@
             if (!parentNode) return;
             parentNode.children = parentNode.children.filter(child => child.id !== node.id);
         }
+
+        /**** Node rewriting ****/
         
         // Body Rewrite queue and node link dereferencing
         queueRewrite(node, fromStr, toStr) {
@@ -856,6 +976,56 @@
             event.preventDefault();
         });
     });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const nodeEditor = document.getElementById("nodeEditor");
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+      
+        // Set up touch start listener
+        nodeEditor.addEventListener("touchstart", function(e) {
+          const touch = e.changedTouches[0];
+          touchStartX = touch.screenX;
+          touchStartY = touch.screenY;
+        }, false);
+      
+        // Set up touch end listener
+        nodeEditor.addEventListener("touchend", function(e) {
+          const touch = e.changedTouches[0];
+          touchEndX = touch.screenX;
+          touchEndY = touch.screenY;
+          handleGesture();
+        }, false);
+      
+        // Determine swipe direction and call appropriate navigation function
+        function handleGesture() {
+          const deltaX = touchEndX - touchStartX;
+          const deltaY = touchEndY - touchStartY;
+          const threshold = 30; // Minimum distance (in pixels) for a swipe
+      
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // Horizontal swipe
+            if (deltaX > threshold) {
+              // Swipe right
+              window.hierarchyEditor.navigateRight();
+            } else if (deltaX < -threshold) {
+              // Swipe left
+              window.hierarchyEditor.navigateLeft();
+            }
+          } else {
+            // Vertical swipe
+            if (deltaY > threshold) {
+              // Swipe down
+              window.hierarchyEditor.navigateDown();
+            }
+            // Upward swipe can be handled here if desired.
+          }
+        }
+      });
+      
+
     window.HierarchyEditor = HierarchyEditor;
     window.Nav = Nav;
 })();

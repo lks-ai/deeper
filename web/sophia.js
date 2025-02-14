@@ -315,11 +315,13 @@ document.addEventListener("DOMContentLoaded", () => {
     o.push('## Conversation History')
     // Compile the history by entry from [off - n] to off - 1
     for (let i = 0; i < n; i++){
-        let v = l[off + i];
-        if (v.metadata.hasOwnProperty('user_request')){
-          o.push(`--- ${config.user_name}:\n${v.metadata.user_request || ""}\n\n--- ${config.agent_name}: ${v.name}\n${v.body}`);
+        let node = l[off + i];
+        let user_name = hierarchyEditor.getConfigValue(node, 'user_name');
+        let agent_name = hierarchyEditor.getConfigValue(node, 'agent_name');
+        if (node.metadata.hasOwnProperty('user_request')){
+          o.push(`--- ${user_name}:\n${node.metadata.user_request || ""}\n\n--- ${agent_name}: ${node.name}\n${node.body}`);
         }else{
-          o.push(`--- Content: ${v.name}\n${v.body}`);
+          o.push(`--- Content: ${node.name}\n${node.body}`);
         }
     }
     // If we are updating, and body.length > 0 then include a block for rewriting the request
