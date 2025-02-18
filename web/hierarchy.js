@@ -247,6 +247,18 @@
             }
             return null;
         }
+
+        getAncestors(node, generations=1, includeSelf=false){
+            let c = 0;
+            let o = [];
+            let parent = node;
+            while (parent.parent && c < generations){
+                o.push(parent.parent);
+                parent = parent.parent;
+                c++;
+            }
+            return o;
+        }
         
         getNodeTypeData(node){
             return this.getNodeType(node.type) || { label: "Node" };

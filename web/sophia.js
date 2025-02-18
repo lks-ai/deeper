@@ -521,7 +521,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (targetNode.metadata.tag){
         let tag = targetNode.metadata.tag;
         hierarchyEditor.queueRewrite(
-          hierarchyEditor.getPeers(targetNode, true),
+          [...hierarchyEditor.getPeers(targetNode, true), ...hierarchyEditor.getAncestors(targetNode, 2)],
           `**${tag}**`,
           `[${tag}](#${targetNode.id})`
         );

@@ -83,6 +83,11 @@ Then navigate your browser to `http://localhost:8123`
         - tag check: rewrite based on tags over all children (multichildren match rewrite queueing) This happens on rewriting with new links in bold
         - on tag check, also check for non-existing links on page load and bold them back out
     - ✅ rewrite content based on peers (setup after body renders on send response)
+- Automated branch editing
+    - Simple rewrite: once a branch's main node content is edited, a simple rewrite of children branches could happen where the child content is edited based on the change in "history"
+    - Content based: rewrites each node (using sequence of paths) such that some instruction modifies the user request on each node
+    - Request based: uses the requests as a "prompt series" for grafting a branch "template" on to some new parent. Could be used for quick context based procedural content generation.
+- Link based RAG: all peer links in contents of nodes will allow for context based recall without vector embeddings
 
 ### SysOps
 - ✅ Fixing HTTPS on the demo
