@@ -152,7 +152,9 @@
     // 9. Links: [text](url "optional title")
     text = text.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, function(match, linkText, url, title) {
       var titleAttr = title ? ' title="' + title + '"' : '';
-      return '<a href="' + url + '"' + titleAttr + '>' + linkText + '</a>';
+      // if it's not a hashtag based link
+      let targetAttr = url[0] == '#' ? '': ` target="_blank"`;
+      return '<a href="' + url + '"' + titleAttr + targetAttr + '>' + linkText + '</a>';
     });
 
     // 10. Images: ![alt text](url "optional title")

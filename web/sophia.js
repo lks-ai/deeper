@@ -112,6 +112,18 @@ function trim (s, c) {
   ), "");
 }
 
+function extractUuidsFromMarkdown(markdownText) {
+  // Regex matches markdown links of the form: [Label](#uuid)
+  // where uuid is of the standard format: 8-4-4-4-12 hex characters.
+  const regex = /\[[^\]]+\]\(#([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\)/gi;
+  const uuids = [];
+  let match;
+  while ((match = regex.exec(markdownText)) !== null) {
+    uuids.push(match[1]);
+  }
+  return uuids;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const sophia = {};
     sophia.dirty = false;
@@ -182,6 +194,32 @@ document.addEventListener("DOMContentLoaded", () => {
         </ul>
     `);
   }, "Options Menu");
+
+  window.hierarchyEditor.addToolbarButton("🌳", (currentNode) => {
+    setTimeout(function(){
+      const canvas = document.getElementById('treeView');
+      const visualizer = new TreeVisualizer(canvas, hierarchyEditor.treeData, {
+        branchLength: 120,
+        branchScale: 0.618033989,
+        spreadAngle: Math.PI / 2,
+        nodeRadius: 8,
+        defaultColor: "#444",
+        highlightColor: "red",
+        pathColor: "blue",
+        linkColor: "#aaa",
+        typeColors: {
+          default: "#e76f51",
+          special: "#444",
+          important: "#2a9d8f"
+        },
+        currentPath: window.hierarchyEditor.currentFocusPath
+      });
+    }, 200);
+    showModal(`
+        <h2>Tree View<br><small>${currentNode.name}</small></h2>
+        <canvas id="treeView" width="600" height="600"></canvas>
+    `);
+  }, "Tree View");
 
   // Register a hook for when a node is created.
   window.hierarchyEditor.on("nodeCreated", (data) => {
@@ -321,25 +359,44 @@ document.addEventListener("DOMContentLoaded", () => {
   Sophia client stuff
   */
 
+  sophia.formatContextEntry = function(node){
+    let user_name = hierarchyEditor.getConfigValue(node, 'user_name');
+    let agent_name = hierarchyEditor.getConfigValue(node, 'agent_name');
+    if (node.metadata.hasOwnProperty('user_request')){
+      return `--- ${user_name}:\n${node.metadata.user_request || ""}\n\n--- ${agent_name}: ${node.name}\n${node.body}`;
+    }else{
+      return `--- Content: ${node.name}\n${node.body}`;
+    }
+  }
+
+  sophia.compileLinkRecall = function(node){
+    // Gets a list of all links from a node and compiles a 
+    if (!node) return '';
+    let o = [];
+
+    const results = extractUuidsFromMarkdown(node.body);
+    results.forEach((uuid) => {
+      let n = hierarchyEditor.findNodeById(hierarchyEditor.treeData, uuid);
+      if (n){
+        o.push(sophia.formatContextEntry(n));
+      }
+    });
+    return o;
+  }
+
   sophia.compileContext = function(config, maxLevels=5, onChild=false){
     let l = hierarchyEditor.currentFocusPath;
     let n = l.length < maxLevels ? l.length: maxLevels;
     let off = l.length - n;
     let last = l[l.length - 1];
-    if (!onChild) n--; // omit current entry if it an update
+    if (!onChild) n--; // omit current entry if it is an update
     // if (n <= 0) return "";
     let o = [];
     o.push('## Conversation History')
     // Compile the history by entry from [off - n] to off - 1
     for (let i = 0; i < n; i++){
         let node = l[off + i];
-        let user_name = hierarchyEditor.getConfigValue(node, 'user_name');
-        let agent_name = hierarchyEditor.getConfigValue(node, 'agent_name');
-        if (node.metadata.hasOwnProperty('user_request')){
-          o.push(`--- ${user_name}:\n${node.metadata.user_request || ""}\n\n--- ${agent_name}: ${node.name}\n${node.body}`);
-        }else{
-          o.push(`--- Content: ${node.name}\n${node.body}`);
-        }
+        o.push(sophia.formatContextEntry(node));
     }
     // If we are updating, and body.length > 0 then include a block for rewriting the request
     let justStarting = n <= 0 && !sophia.dirty
@@ -355,7 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   sophia.compilePromptHistory = function(){
     if (typeof sophia.promptHistory === 'undefined') return '';
-    o = [];
+    let o = [];
     var history = sophia.promptHistory;
     for (var i = 0; i < history.length; i++){
         let v = history[history.length - i - 1];
@@ -510,14 +567,14 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Update metadata
       targetNode.metadata = {...targetNode.metadata, ...result};
-      targetNode.metadata.user_request = prompt;
+      if (createChild) targetNode.metadata.user_request = prompt;
 
       // Set other fields
       let cleanName = result.label.replace('Knowledge Label:', '')
       targetNode.name = trim(cleanName, '- ');
       targetNode.body = result.response;
 
-      // Perform peer rewrites using the targetNode.metadata.tag to make them link here.
+      // Perform peer and ancestor rewrites using the targetNode.metadata.tag to make them link here.
       if (targetNode.metadata.tag){
         let tag = targetNode.metadata.tag;
         hierarchyEditor.queueRewrite(
@@ -526,6 +583,20 @@ document.addEventListener("DOMContentLoaded", () => {
           `[${tag}](#${targetNode.id})`
         );
       }
+      // Reverse rewrite peers that came later than targetNode such that they point to target node
+      let rpeers = hierarchyEditor.getPeers(targetNode);
+      for (let ip = 0; ip < rpeers.length; ip++){
+        let peer = rpeers[ip];
+        if (peer.metadata.tag){
+          let tag = peer.metadata.tag;
+          hierarchyEditor.queueRewrite(
+            [targetNode],
+            `**${tag}**`,
+            `[${tag}](#${peer.id})`  
+          );
+        }
+      };
+
 
       // Set the interface as "touched"
       sophia.dirty = true;

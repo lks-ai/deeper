@@ -49,7 +49,7 @@ Then navigate your browser to `http://localhost:8123`
 ## TODO
 
 ### UI
-- Swipe left and right: swipe through peers, or if all the way left, swipe to parent, all the way right on breadcrumb? swipe to first child
+- ✅ Swipe left and right: swipe through peers, or if all the way left, swipe to parent, all the way right on breadcrumb? swipe to first child
 - ✅ Select which model to run (Agents)
 - ✅ Control the agent prompts within the interface
     - ✅ Each agent has it's own server-side folder in prompts with overrides
@@ -77,7 +77,7 @@ Then navigate your browser to `http://localhost:8123`
 - ✅ Ability to select text and use that as the prompt
 - Cross-Branch Easy linking
     - Add to the context toolbar a select box for the branches
-- upon saving need to write config to the root node before save
+- ✅ upon saving need to write config to the root node before save
 - Multi-directional rewriting
     - Gives ability to rewrite the content of a node based on the content of it's children
         - tag check: rewrite based on tags over all children (multichildren match rewrite queueing) This happens on rewriting with new links in bold
@@ -88,6 +88,7 @@ Then navigate your browser to `http://localhost:8123`
     - Content based: rewrites each node (using sequence of paths) such that some instruction modifies the user request on each node
     - Request based: uses the requests as a "prompt series" for grafting a branch "template" on to some new parent. Could be used for quick context based procedural content generation.
 - Link based RAG: all peer links in contents of nodes will allow for context based recall without vector embeddings
+- reverse rewrites on peers: async peer rewriting such that any peer with a body and a tag gets in the queue. solves the issue of one-way rewriting on sequential child nodes
 
 ### SysOps
 - ✅ Fixing HTTPS on the demo
