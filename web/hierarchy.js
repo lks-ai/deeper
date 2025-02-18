@@ -10,6 +10,15 @@
         
         return Markdown.render(mdText, options);
     }
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\%%CODEBLOCK_0%%amp;');
+    }
+    function replaceAllCaseInsensitiveRegex(str, searchValue, replacementValue) {
+        const esv = escapeRegExp(searchValue);
+        const regex = new RegExp(esv, 'gi'); // 'g' for global, 'i' for case-insensitive
+        return str.replaceAll(regex, replacementValue);
+    }
+      
     
     class Nav {
         setHash(hash) {
@@ -256,8 +265,10 @@
         getConfigValue(node, key){
             let parent = node;
             while (parent){
-                if (parent.config.hasOwnProperty(key)){
-                    return parent.config[key];
+                if (parent.hasOwnProperty('config')){
+                    if (parent.config.hasOwnProperty(key)){
+                        return parent.config[key];
+                    }
                 }
                 parent = parent.parent;
             }
@@ -941,6 +952,7 @@
                 for (let i = 0; i < node.length; i++){
                     let n = node[i];
                     if (n && typeof n.body === "string") {
+                        //n.body = replaceAllCaseInsensitiveRegex(n.body, fromStr, toStr)
                         n.body = n.body.replaceAll(fromStr, toStr);
                     }
                 }
