@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sophia.treeName = '';
     sophia.defaults = null;
     sophia.language = 'English';
-    sophia._agentConfig = {};
+    sophia._agentConfig = null;
 
     if (!window.hierarchyEditor) {
       console.error("HierarchyEditor is not available.");
@@ -438,7 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.getAgentConfig = function(){
     // get once
     let r = sophia._agentConfig;
-    sophia._agentConfig = {};
+    sophia._agentConfig = null;
     return r;
   }
 
@@ -482,7 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Include any agent config which was set in Node options
     let acfg = sophia.getAgentConfig(); // get once
-    if (acfg.hasOwnProperty('agent')){
+    if (acfg){
       targetNode.config = acfg;
       data.agent = config.agent;
     }
