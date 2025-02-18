@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
      * Computes the selection’s position, creates a toolbar with some test buttons,
      * and displays the toolbar overlay.
      */
-    function handleSelectionEnd(event) {
+    function _handleSelectionEnd(event) {
       const selection = window.getSelection();
       const selectedText = selection.toString().trim();
       // console.log(`Selection ended. You selected: "${selectedText}"`);
@@ -139,6 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
   
       // Display the toolbar overlay at the computed (x, y) position.
       showToolbarOverlay(x, y, buttons, selectedText);
+    }
+
+    function handleSelectionEnd(event){
+      setTimeout(function(){_handleSelectionEnd(event)}, 200);
     }
   
     // Attach event listeners for selection end events.

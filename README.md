@@ -89,7 +89,7 @@ Then navigate your browser to `http://localhost:8123`
 
 ### Server-Side
 - Search Capability for web search
-- Browsing capability
+- Web browser tool
 - Agent Prompts for (coder, roleplayer, etc)
 - Tree based Prompt templates (graft a branch, re-generate full branch with nulled bodies)
 - Mult-directional context stacking

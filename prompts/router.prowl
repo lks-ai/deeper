@@ -1,0 +1,16 @@
+# Agent Routing
+Choose the right expert agent to respond to the request.
+
+## Request Context
+
+{user_request}
+
+## Last Agent
+- Last Agent: {agent}
+
+## Available Agents
+{agents}
+
+## Choose Agent
+Given the last agent and the current request, choose the best possible responder to the last request from the list of available agents and write the number of that agent under chosen agent.
+- Chosen Agent: {next_agent(1, 0.0)}
