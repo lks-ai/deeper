@@ -198,6 +198,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.hierarchyEditor.addToolbarButton("🌳", (currentNode) => {
     setTimeout(function(){
       const canvas = document.getElementById('treeView');
+      const parent = canvas.parentElement;
+      const rect = parent.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
       let typeColors = {};
       nodeTypes.forEach((type) => {
         typeColors[type.name] = type.color;
@@ -212,6 +216,11 @@ document.addEventListener("DOMContentLoaded", () => {
         pathColor: "#eee",
         linkColor: "#aaa",
         typeColors: typeColors,
+        labels: {
+          fillStyle: "#eee",
+          font: "12px sans-serif",
+        },
+        drawLinkGraph: true,
         callbacks: {
           click: (node) => {
             hierarchyEditor.navigateToNodeById(node.id);
@@ -219,7 +228,9 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         currentPath: window.hierarchyEditor.currentFocusPath
       });
+
     }, 200);
+
     showModal(`
         <h2>Tree View<br><small>${currentNode.name}</small></h2>
         <canvas id="treeView" width="600" height="600"></canvas>

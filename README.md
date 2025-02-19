@@ -62,6 +62,7 @@ Then navigate your browser to `http://localhost:8123`
 - User accounts and folders
 - Node tagging based on links (use a link metadata for quick search lookup)
 - ✅ Remapping links and full concurrent body rewrite queue
+- ✅ Tree graph visuzlization
 - Multilinguality
 - Multimodality with Drag & Drop for modal inputs
 - ✅ Code block cleanup
