@@ -46,7 +46,7 @@ class TreeVisualizer {
         // Optionally supply an array of nodes that represent the current path.
         currentPath: [],
         // Minimum separation (in scene units) required between nodes.
-        minSeparation: 5,
+        minSeparation: 1,
         // Generation limit for collision resolution.
         collisionGenerationLimit: 5,
         callbacks: {}

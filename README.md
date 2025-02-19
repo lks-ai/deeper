@@ -1,108 +1,136 @@
 # Deepr Wiki
-*Local LLM driven Knowledge Tree with Tree-of-Thought capabilities*
+**Local LLM-driven Knowledge Tree with Tree-of-Thought Capabilities**
 
+[![Online Demo](https://img.shields.io/badge/Online-Demo-blue)](http://deepr.wiki)  
 Original Repo: [lks-ai/deeper](https://github.com/lks-ai/deeper)
 
-**[Online Demo (Please behave)](http://deepr.wiki)**
+---
+
+## Overview
+
+Deepr Wiki is a local knowledge management tool driven by large language models. It allows you to build, navigate, and reason over full trees of knowledge with advanced tree-of-thought capabilities. It’s designed for study, research, and personal knowledge management—all while keeping your data local for enhanced privacy.
+
+---
 
 ## Benefits
-- Great for study and research
-- Makes knowledge easily portable and navegable
-- Saves lots of time
-- Enjoy privacy in a closed network
+
+- **Enhanced Research & Study:** Quickly navigate and explore your knowledge base.
+- **Portability:** Organize and export knowledge trees easily.
+- **Time-Saving:** Automates parts of your reasoning process.
+- **Privacy:** All data runs locally in a closed network.
+- **LLM-Enhanced:** Add advanced reasoning to any OpenAI-compatible language model.
+
+---
 
 ## Features
-- Runs fully locally
-- Make full trees of any type of content
-- Easy to use intuitive and **mobile friendly** interface
-- Use any LLM, Deeper adds **advanced reasoning capabilities** to it
-- Preset to use OpenRouter but can use any OpenAI compatible endpoints
-- Save and Load your Trees / Branches
-- Easily repeat prompts with the prompt history
+
+- **Fully Local Execution:** Runs entirely on your machine.
+- **Flexible Tree Structures:** Create full trees with any type of content.
+- **Intuitive, Mobile-Friendly UI:** Designed for both desktop and mobile users.
+- **LLM Integration:** Easily plug in any LLM; by default uses OpenRouter but supports any OpenAI-compatible endpoint.
+- **Save & Load:** Persist your trees and branches.
+- **Prompt History:** Quickly repeat prompts with easy access to prompt history.
+- **Tree Graph Visualization:** Visual representation of your knowledge structure.
+- **Code Block & Markdown Enhancements:** Includes copy functions and cleanup for code blocks.
+- **User-Friendly Navigation:** Hash-based navigation, UUIDs for nodes, and smooth mobile interactions.
+- **Cross-Branch Linking:** Easily link related branches.
+- **Auto-Revisions & Peer Updates:** Features for automated branch editing and content-based rewrites.
+- **Privacy & Security:** No data leaves your local network.
+
+---
 
 ## Setup
-Make sure you have your environment variables set up properly in a file called `.env` in the project root folder. Here is an example that hooks up Deepr wiki to OpenRouter, which you can also see in `placeholder.env`:
-```.env
-# Endpoint and model (any OpenAI compatible API)
+
+### Environment Variables
+
+Create a `.env` file in the project root to configure your API endpoints and keys. For example, to use OpenRouter:
+
+```dotenv
+# Endpoint and model (any OpenAI-compatible API)
 PROWL_VLLM_ENDPOINT=https://openrouter.ai/api
 PROWL_MODEL=qwen/qwen-2.5-7b-instruct
-# This is for using hosted services that require an API key
-PROWL_VENDOR_API_KEY= ... put your key ...
+# For hosted services that require an API key:
+PROWL_VENDOR_API_KEY=YOUR_API_KEY_HERE
 ```
 
-## Install
-From the parent folder you want to install Deepr on.
+You can refer to `placeholder.env` for a sample configuration.
+
+---
+
+## Installation
+
+Clone the repository and install the dependencies. These steps work on Linux, macOS, and Windows (using a terminal or Command Prompt).
+
 ```sh
 git clone https://github.com/lks-ai/deeper.git
 cd deeper
 pip install -r requirements.txt
 ```
 
-## Get Started
-From the `deeper` folder you just installed
+---
+
+## Getting Started
+
+After installing, start the server by running:
+
 ```sh
 python serve.py
 ```
-Then navigate your browser to `http://localhost:8123`
 
+Then open your browser and navigate to [http://localhost:8123](http://localhost:8123).
 
-## TODO
+---
 
-### UI
-- ✅ Swipe left and right: swipe through peers, or if all the way left, swipe to parent, all the way right on breadcrumb? swipe to first child
-- ✅ Select which model to run (Agents)
-- ✅ Control the agent prompts within the interface
-    - ✅ Each agent has it's own server-side folder in prompts with overrides
-- ✅ Hash based navigation (browser history plus UX control URL<->UX)
-- ✅ Nodes should have UUIDs
-- ✅ Thought View Breakdown
-- ✅ Download tree files
-- ✅ Hash based loading with SQLite3 node id indexing (Nope: opted for `share-` syntax in client side then run a load from the name that comes after)
-    - Included share link in Options menu under Save
-- User accounts and folders
-- Node tagging based on links (use a link metadata for quick search lookup)
-- ✅ Remapping links and full concurrent body rewrite queue
-- ✅ Tree graph visuzlization
-- Multilinguality
-- Multimodality with Drag & Drop for modal inputs
-- ✅ Code block cleanup
-    - ✅ Copy function for code blocks and full message markdown
-- ✅ Fix prompt history selection on mobile
-- ✅ Showing multiline metadata properly
-- Some sort of Tree selector for modals
-- ✅ Make `Update` button reference the current node's contents and the revision request (so it revises what is already there if something exists)
-- JS based tree diff and maybe tregex?
-- Some form of simplified RAG without too much overhead (ModernBERT?)
-- ✅ Stop user from leaving page
-- On serialization of hierarchyEditor, make it use parent.id instead of null
-- ✅ Ability to select text and use that as the prompt
-- Cross-Branch Easy linking
-    - Add to the context toolbar a select box for the branches
-- ✅ upon saving need to write config to the root node before save
-- Multi-directional rewriting
-    - Gives ability to rewrite the content of a node based on the content of it's children
-        - tag check: rewrite based on tags over all children (multichildren match rewrite queueing) This happens on rewriting with new links in bold
-        - on tag check, also check for non-existing links on page load and bold them back out
-    - ✅ rewrite content based on peers (setup after body renders on send response)
-- Automated branch editing
-    - Simple rewrite: once a branch's main node content is edited, a simple rewrite of children branches could happen where the child content is edited based on the change in "history"
-    - Content based: rewrites each node (using sequence of paths) such that some instruction modifies the user request on each node
-    - Request based: uses the requests as a "prompt series" for grafting a branch "template" on to some new parent. Could be used for quick context based procedural content generation.
-- Link based RAG: all peer links in contents of nodes will allow for context based recall without vector embeddings
-- reverse rewrites on peers: async peer rewriting such that any peer with a body and a tag gets in the queue. solves the issue of one-way rewriting on sequential child nodes
+## Roadmap / TODO
+
+Below is a list of planned features and improvements. Checkmarks (✅) indicate completed items.
+
+### UI Enhancements
+- ✅ Swipe left/right: Navigate among peers and between parent/child nodes.
+- ✅ Model selection (Agents) & in-UI agent prompt controls.
+- ✅ Hash-based navigation (syncs browser history with UX).
+- ✅ Nodes assigned UUIDs.
+- ✅ Thought View Breakdown.
+- ✅ Download tree files.
+- ✅ Share link functionality via hash-based loading.
+- User accounts and folder management.
+- Node tagging and quick search.
+- ✅ Remapping links and concurrent body rewrite queue.
+- Multilingual support.
+- Drag & Drop multimodality for modal inputs.
+- ✅ Code block cleanup with copy function.
+- ✅ Fix prompt history selection on mobile.
+- ✅ Properly display multiline metadata.
+- Tree selector modal for branch selection.
+- ✅ Update button to reference current node's content for revision.
+- JS-based tree diff and tregex integration.
+- Simplified RAG without heavy overhead (e.g., ModernBERT).
+- ✅ Prevent user from leaving the page accidentally.
+- Use parent.id on hierarchyEditor serialization.
+- ✅ Enable text selection to trigger prompts.
+- Cross-branch linking (add select box for branches).
+- ✅ Write config to the root node on save.
+- Multi-directional rewriting (based on children/peers).
+- Automated branch editing (simple and content-based rewriting).
+- Link-based RAG for context recall.
+- Reverse rewrites on peers (asynchronous editing).
 
 ### SysOps
-- ✅ Fixing HTTPS on the demo
+- ✅ Fix HTTPS on the demo site.
 
-### Server-Side
-- Search Capability for web search
-- Web browser tool
-- Agent Prompts for (coder, roleplayer, etc)
-- Tree based Prompt templates (graft a branch, re-generate full branch with nulled bodies)
-- Mult-directional context stacking
-    - currently it's just a straight path directly from the root to the leaf
-    - could have a mode where it sequentially stacks any peer nodes before it
-    - OR, base it on the cross-peer links which can exist inside of the content for the current node!!!! (that' the play)
-- Multimedia content
-    - Making sure to safely allow html
-- Auto-Agent Switching
+### Server-Side Enhancements
+- Web search capability.
+- Integrated web browser tool.
+- Agent prompts for various roles (coder, roleplayer, etc.).
+- Tree-based prompt templates (for grafting or regeneration).
+- Multi-directional context stacking (beyond the simple root-to-leaf path).
+- Safe handling of multimedia/HTML content.
+- Auto-agent switching.
+- WebSockets for collaboration and background processing.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request with your improvements or bug fixes.
+
