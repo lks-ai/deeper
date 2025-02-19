@@ -448,6 +448,7 @@ class TreeVisualizer {
   drawAdditionalLinksScreen(node) {
     if (node.links && Array.isArray(node.links)) {
       node.links.forEach((targetNode) => {
+        if (node.children.includes(targetNode)) return;
         let infoA = this.nodeInfo.get(node);
         let infoB = this.nodeInfo.get(targetNode);
         if (!infoA || !infoA.position || !infoB || !infoB.position) return;

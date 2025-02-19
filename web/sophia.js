@@ -112,10 +112,10 @@ function trim (s, c) {
   ), "");
 }
 
-function extractUuidsFromMarkdown(markdownText) {
+function extractHashLinksFromMarkdown(markdownText) {
   // Regex matches markdown links of the form: [Label](#uuid)
   // where uuid is of the standard format: 8-4-4-4-12 hex characters.
-  const regex = /\[[^\]]+\]\(#([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\)/gi;
+  const regex = /\[[^\]]+\]\(#([0-9a-z\-]+)\)/gi;
   const uuids = [];
   let match;
   while ((match = regex.exec(markdownText)) !== null) {
@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const parent = canvas.parentElement;
       const rect = parent.getBoundingClientRect();
       canvas.width = rect.width;
-      canvas.height = rect.height;
+      canvas.height = rect.height - 10;
       let typeColors = {};
       nodeTypes.forEach((type) => {
         typeColors[type.name] = type.color;
@@ -211,10 +211,10 @@ document.addEventListener("DOMContentLoaded", () => {
         branchScale: 0.618033989,
         spreadAngle: Math.PI / 2,
         nodeRadius: 8,
-        defaultColor: "#444",
+        defaultColor: "#888888",
         highlightColor: "#fff",
         pathColor: "#eee",
-        linkColor: "#aaa",
+        linkColor: "#8b67bf",
         typeColors: typeColors,
         labels: {
           fillStyle: "#eee",
@@ -224,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
         callbacks: {
           click: (node) => {
             hierarchyEditor.navigateToNodeById(node.id);
+            hierarchyEditor.breadcrumbRow.scrollBy(10024, 0);
           }
         },
         currentPath: window.hierarchyEditor.currentFocusPath
@@ -420,12 +421,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  sophia.updateLinks = function(node){
+    // synchronizes the links from the node's body into a "links" field in nodes
+    let uuids = extractHashLinksFromMarkdown(node.body);
+    node.links = [];
+    for (let i = 0; i < uuids.length; i++){
+      let n = hierarchyEditor.findNodeById(hierarchyEditor.treeData, uuids[i]);
+      if (n) node.links.push(n);
+    }
+  }
+
+  sophia.traverseBranch = function(node, callback) {
+    if (!node) return;
+    callback(node);
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => sophia.traverseBranch(child, callback));
+    }
+  }
+  
   sophia.compileLinkRecall = function(node){
-    // Gets a list of all links from a node and compiles a 
+    // Gets a list of all links from a node body and compiles a 
     if (!node) return '';
     let o = [];
 
-    const results = extractUuidsFromMarkdown(node.body);
+    const results = extractHashLinksFromMarkdown(node.body);
     results.forEach((uuid) => {
       let n = hierarchyEditor.findNodeById(hierarchyEditor.treeData, uuid);
       if (n){
@@ -465,11 +484,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof sophia.promptHistory === 'undefined') return '';
     let o = [];
     var history = sophia.promptHistory;
+    o.push('<option value="">prompt history</option>');
     for (var i = 0; i < history.length; i++){
         let v = history[history.length - i - 1];
         o.push('<option>' + v + '</option>');
     }
-    if (o.length == 0) o.push('<option value="">prompt history</option>');
     return '<select id="prompt-history" onchange="document.getElementById(\'message-input\').value=this.value;">' + o.join("") + '</select>';
   }
 
@@ -648,7 +667,7 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         }
       };
-
+      sophia.updateLinks(targetNode);
 
       // Set the interface as "touched"
       sophia.dirty = true;
@@ -697,6 +716,7 @@ document.addEventListener("DOMContentLoaded", () => {
       hierarchyEditor.fromJson(data, !globalScope ? hierarchyEditor.getCurrentNode(): null);
       sophia.treeName = name;
       sophia.dirty = true;
+      sophia.traverseBranch(hierarchyEditor.treeData, sophia.updateLinks);
       setTimeout(function(){
         hierarchyEditor.render();
       }, 0);
