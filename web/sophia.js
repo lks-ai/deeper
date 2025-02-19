@@ -198,19 +198,24 @@ document.addEventListener("DOMContentLoaded", () => {
   window.hierarchyEditor.addToolbarButton("🌳", (currentNode) => {
     setTimeout(function(){
       const canvas = document.getElementById('treeView');
+      let typeColors = {};
+      nodeTypes.forEach((type) => {
+        typeColors[type.name] = type.color;
+      });
       const visualizer = new TreeVisualizer(canvas, hierarchyEditor.treeData, {
         branchLength: 120,
         branchScale: 0.618033989,
         spreadAngle: Math.PI / 2,
         nodeRadius: 8,
         defaultColor: "#444",
-        highlightColor: "red",
-        pathColor: "blue",
+        highlightColor: "#fff",
+        pathColor: "#eee",
         linkColor: "#aaa",
-        typeColors: {
-          default: "#e76f51",
-          special: "#444",
-          important: "#2a9d8f"
+        typeColors: typeColors,
+        callbacks: {
+          click: (node) => {
+            hierarchyEditor.navigateToNodeById(node.id);
+          }
         },
         currentPath: window.hierarchyEditor.currentFocusPath
       });
@@ -320,6 +325,41 @@ document.addEventListener("DOMContentLoaded", () => {
     ${sophia.compilePromptHistory()}
     <button id="send-child-btn" onclick="var e = document.getElementById('message-input'); window.sophia.send('` + currentNode.id + `', e.value, createChild=true); e.value='';" class="right">↳ Add</button>
     `;
+
+    div.addEventListener('dragenter', function(event) {
+      hovered(event);
+    });
+    
+    div.addEventListener('dragleave', function(event) {
+      setDefault(event);
+    });
+    
+    div.addEventListener('dragover',  function(event) {
+      hovered(event);
+    });
+    
+    div.addEventListener('drop',  function(event) {
+      setDefault(event);
+      handleDrop(event);
+    });
+    
+    function hovered (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.currentTarget.classList.add('hovered');
+    }  
+    
+    function setDefault (e) {
+      e.currentTarget.classList.remove('hovered');
+    }
+
+    function handleDrop(event){
+      // Attach file as part of a multipart form (only one file at a time for now)
+      console.log(`Dropped: ${event}`);
+      console.log(event);
+      event.preventDefault();
+    }
+
     return div;
   });
 
@@ -528,6 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
       if (label) {
         targetNode.metadata.tag = trim(label, ':*#,.-');
+        //targetNode.body.replace(':** ', '**: '); // IS this Dirty?
         hierarchyEditor.queueRewrite(
           [parentNode],
           `**${label}**`,

@@ -245,7 +245,7 @@
                     return node.parent.children;
                 }
             }
-            return null;
+            return [];
         }
 
         getAncestors(node, generations=1, includeSelf=false){

@@ -1,7 +1,7 @@
 class TreeVisualizer {
     /**
      * @param {HTMLCanvasElement} canvas - the canvas element to draw on.
-     * @param {Object} treeData - the tree data object (with name, type, children, etc.).
+     * @param {Object} treeData - the tree data object.
      * @param {Object} options - additional options to control appearance and behavior.
      */
     constructor(canvas, treeData, options = {}) {
@@ -12,7 +12,7 @@ class TreeVisualizer {
       // Save tree data.
       this.treeData = treeData;
   
-      // Default options – you can override these when calling the constructor.
+      // Default options.
       this.options = Object.assign(
         {
           branchLength: 100,       // initial branch length (in scene units)
@@ -28,10 +28,19 @@ class TreeVisualizer {
             special: "#2a9d8f",
             important: "#e76f51"
           },
-          // Optionally supply an array of nodes that represent a “current path”
+          labels: {
+            fillStyle: "#777",
+            font: "12px sans-serif",
+          },
+          drawLinkGraph: false,
+          animateTime: 500,
+          // Optionally supply an array of nodes that represent the current path.
           currentPath: [],
           // Minimum separation (in scene units) required between nodes.
-          minSeparation: 5
+          minSeparation: 5,
+          // Generation limit for collision resolution.
+          collisionGenerationLimit: 5,
+          callbacks: {}
         },
         options
       );
@@ -52,14 +61,23 @@ class TreeVisualizer {
       this.animationStartTime = null;
       this.animationDuration = 0; // in milliseconds
   
+      // Use a WeakMap to store computed layout info per node.
+      // This prevents us from modifying your original data.
+      this.nodeInfo = new WeakMap();
+  
       // Initially compute the layout positions (scene coordinates) for all nodes.
       this.computeLayout();
   
       // Initialize event listeners.
       this.initEvents();
   
-      // Initial render.
-      this.render();
+      if (this.currentPath && this.currentPath.length > 0) {
+        // You can choose a duration of 0 for an instant layout,
+        // or a non-zero duration to animate the transition.
+        this.rearrange(this.options.animateTime);
+      } else {
+        this.render();
+      }
     }
   
     /*–––––––––––––––––––––––––––––––––––––––––––––––––––––––
@@ -68,39 +86,52 @@ class TreeVisualizer {
   
     /**
      * Recursively computes positions for each node in the tree.
-     * The root is positioned at (0,0) (scene coordinates) and its branch grows upward.
-     * Writes each node’s position into node._position.
+     * Computed values (position and depth) are stored in the WeakMap.
      * @param {Object} node - current node.
      * @param {number} x - x coordinate in scene space.
      * @param {number} y - y coordinate in scene space.
      * @param {number} angle - branch angle (radians).
      * @param {number} length - branch length.
+     * @param {number} depth - current depth (default 0).
      */
     layoutNode(node, x, y, angle, length, depth = 0) {
-        // Set current position and record the generation depth.
-        node._position = { x, y };
-        node._depth = depth;
-        
-        if (!node.children || node.children.length === 0) return;
-        
-        const count = node.children.length;
-        const spread = this.options.spreadAngle;
-        
-        // Look for a child that is on the current path.
-        let mainPathIndex = -1;
-        for (let i = 0; i < count; i++) {
-          if (this.currentPath.includes(node.children[i])) {
-            mainPathIndex = i;
-            break;
-          }
+      let info = this.nodeInfo.get(node) || {};
+      info.position = { x, y };
+      info.depth = depth;
+      this.nodeInfo.set(node, info);
+  
+      if (!node.children || node.children.length === 0) return;
+  
+      const count = node.children.length;
+      const spread = this.options.spreadAngle;
+  
+      // Look for a child that is on the current path.
+      let mainPathIndex = -1;
+      for (let i = 0; i < count; i++) {
+        if (this.currentPath.includes(node.children[i])) {
+          mainPathIndex = i;
+          break;
         }
-        
-        if (mainPathIndex !== -1) {
-          // A child is selected. Force that child to be centered.
+      }
+  
+      if (mainPathIndex !== -1) {
+        // If there is exactly one child, simply use the parent's angle.
+        if (count === 1) {
+          const childAngle = angle;
+          const childX = x + length * Math.cos(childAngle);
+          const childY = y - length * Math.sin(childAngle);
+          this.layoutNode(
+            node.children[0],
+            childX,
+            childY,
+            childAngle,
+            length * this.options.branchScale,
+            depth + 1
+          );
+        } else {
+          // Multiple children: force the main path child to be centered.
           const centerIndex = Math.floor(count / 2);
           const centerAngle = Math.PI / 2; // fixed center angle for the main path child
-      
-          // Build an array of "effective indices" so that the selected child gets the center slot.
           const effectiveIndices = [];
           let currentIndex = 0;
           for (let i = 0; i < count; i++) {
@@ -116,25 +147,55 @@ class TreeVisualizer {
               }
             }
           }
-          
-          // Now assign each child's angle based on its effective index.
           for (let i = 0; i < count; i++) {
-            const childAngle = centerAngle - spread / 2 + (spread * effectiveIndices[i]) / (count - 1);
+            const childAngle =
+              centerAngle - spread / 2 + (spread * effectiveIndices[i]) / (count - 1);
             const childX = x + length * Math.cos(childAngle);
             const childY = y - length * Math.sin(childAngle);
-            this.layoutNode(node.children[i], childX, childY, childAngle, length * this.options.branchScale, depth + 1);
+            this.layoutNode(
+              node.children[i],
+              childX,
+              childY,
+              childAngle,
+              length * this.options.branchScale,
+              depth + 1
+            );
           }
+        }
+      } else {
+        // No child on the current path.
+        if (count === 1) {
+          // Only one child: use the parent's angle.
+          const childAngle = angle;
+          const childX = x + length * Math.cos(childAngle);
+          const childY = y - length * Math.sin(childAngle);
+          this.layoutNode(
+            node.children[0],
+            childX,
+            childY,
+            childAngle,
+            length * this.options.branchScale,
+            depth + 1
+          );
         } else {
-          // No child is on the current path; use the default even distribution.
+          // More than one child: evenly distribute.
           for (let i = 0; i < count; i++) {
             const childAngle = angle - spread / 2 + (spread * i) / (count - 1);
             const childX = x + length * Math.cos(childAngle);
             const childY = y - length * Math.sin(childAngle);
-            this.layoutNode(node.children[i], childX, childY, childAngle, length * this.options.branchScale, depth + 1);
+            this.layoutNode(
+              node.children[i],
+              childX,
+              childY,
+              childAngle,
+              length * this.options.branchScale,
+              depth + 1
+            );
           }
         }
       }
-                          
+    }
+  
     /**
      * Computes the layout for the entire tree.
      */
@@ -143,9 +204,7 @@ class TreeVisualizer {
     }
   
     /**
-     * Recursively computes the target positions for each node (without affecting _position)
-     * and stores them in node._targetPosition.
-     * This uses the same algorithm as layoutNode.
+     * Recursively computes the target positions for each node and stores them in the WeakMap.
      * @param {Object} node - current node.
      * @param {number} x - target x coordinate.
      * @param {number} y - target y coordinate.
@@ -153,97 +212,118 @@ class TreeVisualizer {
      * @param {number} length - branch length.
      */
     computeTargetLayout(node, x, y, angle, length) {
-      node._targetPosition = { x, y };
+      let info = this.nodeInfo.get(node) || {};
+      info.targetPosition = { x, y };
+      this.nodeInfo.set(node, info);
+  
       if (!node.children || node.children.length === 0) return;
   
       const count = node.children.length;
       const spread = this.options.spreadAngle;
-      node.children.forEach((child, i) => {
-        let childAngle = angle;
-        if (this.currentPath.includes(child)) {
-          childAngle = Math.PI / 2;
-        } else if (count > 1) {
-          childAngle = angle - spread / 2 + (spread * i) / (count - 1);
-        }
+  
+      if (count === 1) {
+        const childAngle = angle;
         const childX = x + length * Math.cos(childAngle);
         const childY = y - length * Math.sin(childAngle);
-        this.computeTargetLayout(child, childX, childY, childAngle, length * this.options.branchScale);
-      });
+        this.computeTargetLayout(
+          node.children[0],
+          childX,
+          childY,
+          childAngle,
+          length * this.options.branchScale
+        );
+      } else {
+        node.children.forEach((child, i) => {
+          let childAngle = angle;
+          if (this.currentPath.includes(child)) {
+            childAngle = Math.PI / 2;
+          } else {
+            childAngle = angle - spread / 2 + (spread * i) / (count - 1);
+          }
+          const childX = x + length * Math.cos(childAngle);
+          const childY = y - length * Math.sin(childAngle);
+          this.computeTargetLayout(child, childX, childY, childAngle, length * this.options.branchScale);
+        });
+      }
     }
   
     /**
      * Iteratively adjusts nodes’ target positions so that no two nodes are closer than minSeparation.
+     * Only nodes within a specified generation difference are adjusted.
      * @param {Array} nodes - array of all nodes.
      * @param {number} minSeparation - minimum required separation (scene units).
      * @param {number} iterations - number of iterations for relaxation.
      */
-resolveCollisions(nodes, minSeparation, iterations = 10) {
-    // Use a generation limit (default 2 generations) to limit collision resolution scope.
-    const generationLimit = this.options.collisionGenerationLimit || 5;
-    for (let iter = 0; iter < iterations; iter++) {
+    resolveCollisions(nodes, minSeparation, iterations = 10) {
+      const generationLimit = this.options.collisionGenerationLimit || 5;
+      for (let iter = 0; iter < iterations; iter++) {
         for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                let nodeA = nodes[i],
-                nodeB = nodes[j];
-                // Only resolve collisions for nodes within the generation limit.
-                if (Math.abs(nodeA._depth - nodeB._depth) > generationLimit) continue;
-                
-                let dx = nodeB._targetPosition.x - nodeA._targetPosition.x;
-                let dy = nodeB._targetPosition.y - nodeA._targetPosition.y;
-                let dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < minSeparation && dist > 0) {
-                    let overlap = minSeparation - dist;
-                    // If both nodes are on the main path, do nothing.
-                    if (this.currentPath.includes(nodeA) && this.currentPath.includes(nodeB)) {
-                        continue;
-                    } else if (this.currentPath.includes(nodeA)) {
-                        // Only adjust nodeB (move it away from the fixed main path node).
-                        let offsetX = (dx / dist) * overlap;
-                        let offsetY = (dy / dist) * overlap;
-                        nodeB._targetPosition.x += offsetX;
-                        nodeB._targetPosition.y += offsetY;
-                    } else if (this.currentPath.includes(nodeB)) {
-                        // Only adjust nodeA.
-                        let offsetX = (dx / dist) * overlap;
-                        let offsetY = (dy / dist) * overlap;
-                        nodeA._targetPosition.x -= offsetX;
-                        nodeA._targetPosition.y -= offsetY;
-                    } else {
-                        // Neither node is on the main path; adjust both equally.
-                        let offsetX = (dx / dist) * (overlap / 2);
-                        let offsetY = (dy / dist) * (overlap / 2);
-                        nodeA._targetPosition.x -= offsetX;
-                        nodeA._targetPosition.y -= offsetY;
-                        nodeB._targetPosition.x += offsetX;
-                        nodeB._targetPosition.y += offsetY;
-                    }
-                }
+          for (let j = i + 1; j < nodes.length; j++) {
+            let nodeA = nodes[i],
+              nodeB = nodes[j];
+            let infoA = this.nodeInfo.get(nodeA) || {};
+            let infoB = this.nodeInfo.get(nodeB) || {};
+            const depthA = infoA.depth;
+            const depthB = infoB.depth;
+            if (Math.abs(depthA - depthB) > generationLimit) continue;
+            let dx = infoB.targetPosition.x - infoA.targetPosition.x;
+            let dy = infoB.targetPosition.y - infoA.targetPosition.y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minSeparation && dist > 0) {
+              let overlap = minSeparation - dist;
+              if (this.currentPath.includes(nodeA) && this.currentPath.includes(nodeB)) {
+                continue;
+              } else if (this.currentPath.includes(nodeA)) {
+                let offsetX = (dx / dist) * overlap;
+                let offsetY = (dy / dist) * overlap;
+                infoB.targetPosition.x += offsetX;
+                infoB.targetPosition.y += offsetY;
+                this.nodeInfo.set(nodeB, infoB);
+              } else if (this.currentPath.includes(nodeB)) {
+                let offsetX = (dx / dist) * overlap;
+                let offsetY = (dy / dist) * overlap;
+                infoA.targetPosition.x -= offsetX;
+                infoA.targetPosition.y -= offsetY;
+                this.nodeInfo.set(nodeA, infoA);
+              } else {
+                let offsetX = (dx / dist) * (overlap / 2);
+                let offsetY = (dy / dist) * (overlap / 2);
+                infoA.targetPosition.x -= offsetX;
+                infoA.targetPosition.y -= offsetY;
+                infoB.targetPosition.x += offsetX;
+                infoB.targetPosition.y += offsetY;
+                this.nodeInfo.set(nodeA, infoA);
+                this.nodeInfo.set(nodeB, infoB);
+              }
             }
+          }
         }
+      }
     }
-}
-
+  
     /**
      * Initiates an animated rearrangement of the tree.
-     * All nodes get new target positions (via computeTargetLayout and collision resolution)
-     * and their _position values are interpolated toward these targets over the specified duration.
+     * Computes new target positions (with collision resolution) and then interpolates the current positions toward them.
      * @param {number} duration - animation duration in milliseconds.
      */
     rearrange(duration = 2000) {
-      // Save current positions.
+      // Save current positions as start positions.
       this.traverseNodes(this.treeData, (node) => {
-        node._startPosition = { x: node._position.x, y: node._position.y };
+        let info = this.nodeInfo.get(node) || {};
+        info.startPosition = info.position ? { ...info.position } : { x: 0, y: 0 };
+        this.nodeInfo.set(node, info);
       });
       // Compute new target positions.
       this.computeTargetLayout(this.treeData, 0, 0, Math.PI / 2, this.options.branchLength);
-      // Resolve collisions globally.
+      // Gather all nodes.
       const allNodes = [];
       this.traverseNodes(this.treeData, (node) => {
         allNodes.push(node);
       });
+      // Resolve collisions.
       this.resolveCollisions(allNodes, this.options.minSeparation, 10);
   
-      // Set animation parameters.
+      // Set up animation.
       this.animating = true;
       this.animationStartTime = null;
       this.animationDuration = duration;
@@ -251,7 +331,7 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
     }
   
     /**
-     * Recursively traverses the tree and applies callback to each node.
+     * Recursively traverses the tree and applies a callback to each node.
      * @param {Object} node - current node.
      * @param {Function} callback - function to call for each node.
      */
@@ -271,13 +351,14 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
       let elapsed = timestamp - this.animationStartTime;
       let t = elapsed / this.animationDuration;
       if (t > 1) t = 1;
-      // Linear interpolation for each node.
       this.traverseNodes(this.treeData, (node) => {
-        if (!node._startPosition || !node._targetPosition) return;
-        node._position.x =
-          node._startPosition.x + (node._targetPosition.x - node._startPosition.x) * t;
-        node._position.y =
-          node._startPosition.y + (node._targetPosition.y - node._startPosition.y) * t;
+        let info = this.nodeInfo.get(node) || {};
+        if (!info.startPosition || !info.targetPosition) return;
+        info.position = {
+          x: info.startPosition.x + (info.targetPosition.x - info.startPosition.x) * t,
+          y: info.startPosition.y + (info.targetPosition.y - info.startPosition.y) * t
+        };
+        this.nodeInfo.set(node, info);
       });
       this.render();
       if (t < 1) {
@@ -293,20 +374,22 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
   
     /**
      * Main render routine.
-     * It draws links, nodes, and labels in screen space so that their sizes remain constant.
+     * It clears the canvas and then draws hierarchical links, nodes, and labels in screen space.
      */
     render() {
       const ctx = this.ctx;
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   
-      // --- Draw Links in screen space ---
+      // --- Draw hierarchical links in screen space ---
       this.drawTreeLinksScreen(this.treeData);
-      //this.drawAdditionalLinksScreen(this.treeData);
+      // Optionally, draw additional links:
+      if (this.options.drawLinkGraph)
+        this.drawAdditionalLinksScreen(this.treeData);
   
-      // --- Draw Nodes in screen space ---
+      // --- Draw nodes in screen space ---
       this.drawNodes(this.treeData);
   
-      // --- Draw Labels for current path and nodes linked from its last node ---
+      // --- Draw labels for nodes on the current path and linked nodes ---
       let labelNodes = [];
       if (this.currentPath && this.currentPath.length > 0) {
         labelNodes = labelNodes.concat(this.currentPath);
@@ -331,8 +414,11 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
         node.children.forEach((child) => {
           const isOnPath = this.currentPath.includes(node) && this.currentPath.includes(child);
           const lineColor = isOnPath ? this.options.pathColor : this.options.defaultColor;
-          const posA = this.sceneToScreen(node._position.x, node._position.y);
-          const posB = this.sceneToScreen(child._position.x, child._position.y);
+          let infoA = this.nodeInfo.get(node);
+          let infoB = this.nodeInfo.get(child);
+          if (!infoA || !infoA.position || !infoB || !infoB.position) return;
+          const posA = this.sceneToScreen(infoA.position.x, infoA.position.y);
+          const posB = this.sceneToScreen(infoB.position.x, infoB.position.y);
           this.drawLinkScreen(posA, posB, lineColor);
           this.drawTreeLinksScreen(child);
         });
@@ -340,17 +426,18 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
     }
   
     /**
-     * Recursively draws additional links (non-hierarchical) in screen space.
+     * Recursively draws additional (non-hierarchical) links in screen space.
      * @param {Object} node - current node.
      */
     drawAdditionalLinksScreen(node) {
       if (node.links && Array.isArray(node.links)) {
         node.links.forEach((targetNode) => {
-          if (targetNode._position) {
-            const posA = this.sceneToScreen(node._position.x, node._position.y);
-            const posB = this.sceneToScreen(targetNode._position.x, targetNode._position.y);
-            this.drawLinkScreen(posA, posB, this.options.linkColor);
-          }
+          let infoA = this.nodeInfo.get(node);
+          let infoB = this.nodeInfo.get(targetNode);
+          if (!infoA || !infoA.position || !infoB || !infoB.position) return;
+          const posA = this.sceneToScreen(infoA.position.x, infoA.position.y);
+          const posB = this.sceneToScreen(infoB.position.x, infoB.position.y);
+          this.drawLinkScreen(posA, posB, this.options.linkColor);
         });
       }
       if (node.children) {
@@ -359,9 +446,9 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
     }
   
     /**
-     * Draws a line between two screen-space points with constant line width.
-     * @param {Object} posA - {x, y} start point (in screen coordinates).
-     * @param {Object} posB - {x, y} end point (in screen coordinates).
+     * Draws a line between two points in screen space with a constant line width.
+     * @param {Object} posA - {x, y} start point (screen coordinates).
+     * @param {Object} posB - {x, y} end point (screen coordinates).
      * @param {string} color - stroke color.
      */
     drawLinkScreen(posA, posB, color) {
@@ -377,7 +464,7 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
     }
   
     /**
-     * Recursively draws nodes (in screen space) so that their sizes remain constant.
+     * Recursively draws nodes in screen space so that their sizes remain constant.
      * @param {Object} node - current node.
      */
     drawNodes(node) {
@@ -388,11 +475,13 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
     }
   
     /**
-     * Draws a single node as a circle (in screen space).
+     * Draws a single node (as a circle) in screen space.
      * @param {Object} node - node to draw.
      */
     drawNode(node) {
-      const pos = this.sceneToScreen(node._position.x, node._position.y);
+      let info = this.nodeInfo.get(node);
+      if (!info || !info.position) return;
+      const pos = this.sceneToScreen(info.position.x, info.position.y);
       const ctx = this.ctx;
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, this.options.nodeRadius, 0, 2 * Math.PI);
@@ -408,23 +497,23 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
   
     /**
      * Draws labels for the given node or array of nodes in screen space.
-     * @param {Object|Object[]} nodes - the node or nodes to label.
+     * @param {Object|Object[]} nodes - the node(s) to label.
      */
     showLabels(nodes) {
       const ctx = this.ctx;
       ctx.save();
-      ctx.fillStyle = "black";
-      ctx.font = "12px sans-serif"; // constant font size
+      ctx.fillStyle = this.options.labels.fillStyle;
+      ctx.font = this.options.labels.font; // constant font size
       if (!Array.isArray(nodes)) nodes = [nodes];
       nodes.forEach((node) => {
-        if (node._position) {
-          const pos = this.sceneToScreen(node._position.x, node._position.y);
-          ctx.fillText(
-            node.name,
-            pos.x + this.options.nodeRadius + 2,
-            pos.y - this.options.nodeRadius - 2
-          );
-        }
+        let info = this.nodeInfo.get(node);
+        if (!info || !info.position) return;
+        const pos = this.sceneToScreen(info.position.x, info.position.y);
+        ctx.fillText(
+          node.name,
+          pos.x + this.options.nodeRadius + 2,
+          pos.y - this.options.nodeRadius - 2
+        );
       });
       ctx.restore();
     }
@@ -472,16 +561,18 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
     }
   
     /**
-     * Returns the first node whose scene position (node._position) contains the given point.
+     * Returns the first node whose scene position (from nodeInfo) contains the given point.
      * @param {number} x - x coordinate in scene space.
      * @param {number} y - y coordinate in scene space.
      * @param {Object} node - node to test.
      * @returns {Object|null} - the node if hit, or null.
      */
     findNodeAtPoint(x, y, node) {
+      let info = this.nodeInfo.get(node);
+      if (!info || !info.position) return null;
       const hitRadius = this.options.nodeRadius + 3; // tolerance
-      const dx = x - node._position.x;
-      const dy = y - node._position.y;
+      const dx = x - info.position.x;
+      const dy = y - info.position.y;
       if (Math.sqrt(dx * dx + dy * dy) <= hitRadius) {
         return node;
       }
@@ -535,16 +626,12 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        // Compute the scene point under the mouse (with current transform).
         const sceneBefore = this.screenToScene(mouseX, mouseY);
-        let oldScale = this.transform.scale;
         if (e.deltaY < 0) {
           this.transform.scale *= scaleFactor;
         } else {
           this.transform.scale /= scaleFactor;
         }
-        let newScale = this.transform.scale;
-        // After scaling, adjust offset so that sceneBefore still maps to the same mouse position.
         const posAfter = this.sceneToScreen(sceneBefore.x, sceneBefore.y);
         const dx = mouseX - posAfter.x;
         const dy = mouseY - posAfter.y;
@@ -575,8 +662,13 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
           const newPath = this.findPath(this.treeData, clickedNode);
           if (newPath) {
             this.currentPath = newPath;
-            // Trigger animated rearrangement.
-            this.rearrange(2000);
+            this.rearrange(this.options.animateTime);
+          }
+          if (this.options.callbacks.hasOwnProperty('click')){
+            const cfunc = this.options.callbacks.click;
+            setTimeout(function(){
+                cfunc(clickedNode);
+            }, 0);
           }
         }
       });
@@ -594,7 +686,7 @@ resolveCollisions(nodes, minSeparation, iterations = 10) {
             const newPath = this.findPath(this.treeData, touchedNode);
             if (newPath) {
               this.currentPath = newPath;
-              this.rearrange(500);
+              this.rearrange(this.options.animateTime);
             }
           }
         }
