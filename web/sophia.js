@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const parent = canvas.parentElement;
       const rect = parent.getBoundingClientRect();
       canvas.width = rect.width;
-      canvas.height = rect.height - 10;
+      canvas.height = rect.height - 64;
       let typeColors = {};
       nodeTypes.forEach((type) => {
         typeColors[type.name] = type.color;
@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 200);
 
     showModal(`
-        <h2>Tree View<br><small>${currentNode.name}</small></h2>
+        <h2>Tree View<br><small>${hierarchyEditor.treeData.name}</small></h2>
         <canvas id="treeView" width="600" height="600"></canvas>
     `);
   }, "Tree View");
@@ -388,15 +388,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // boldPrefix: '<a href="#" on>',
     // boldSuffix: '</a>'
   };
-
-  // Set up tree configuration for the default research agent (more agents provided by server API)
-  // hierarchyEditor.config = {
-  //   'model': 'qwen/qwen-2.5-7b-instruct',
-  //   'agent': 'research',
-  //   'agent_name': 'Expert',
-  //   'user_name': 'Request',
-  // };
-  // hierarchyEditor.treeData.config = hierarchyEditor.config;
 
   hierarchyEditor.title = "DeepR";
   hierarchyEditor.treeData.name = "DeepR.wiki";
@@ -637,9 +628,13 @@ document.addEventListener("DOMContentLoaded", () => {
       var request = result.user_request;
       
       // Update metadata
+      delete result['user_request'];
       targetNode.metadata = {...targetNode.metadata, ...result};
-      if (createChild) targetNode.metadata.user_request = prompt;
-
+      if (createChild || targetNode.metadata['user_request'] === 'undefined'){
+        // if creating a child, just set user_request to the prompt
+        targetNode.metadata.user_request = prompt;
+      }
+      
       // Set other fields
       let cleanName = result.label.replace('Knowledge Label:', '')
       targetNode.name = trim(cleanName, '- ');
