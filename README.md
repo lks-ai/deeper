@@ -104,7 +104,6 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - Tree selector modal for branch selection.
 - ✅ Update button to reference current node's content for revision.
 - JS-based tree diff and tregex integration.
-- Simplified RAG without heavy overhead (e.g., ModernBERT).
 - ✅ Prevent user from leaving the page accidentally.
 - Use parent.id on hierarchyEditor serialization.
 - ✅ Enable text selection to trigger prompts.
@@ -114,6 +113,7 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - Automated branch editing (simple and content-based rewriting).
 - Link-based RAG for context recall.
 - Reverse rewrites on peers (asynchronous editing).
+- Branch Traversal for branch templates
 
 ### SysOps
 - ✅ Fix HTTPS on the demo site.
@@ -128,6 +128,7 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - Auto-agent switching.
 - User Accounts.
 - WebSockets for collaboration and background processing.
+- Simplified RAG without heavy overhead (e.g., ModernBERT).
 
 ---
 

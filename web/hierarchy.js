@@ -312,6 +312,12 @@
             document.title = `${currentNode.name} - ${this.title}`;
         }
 
+        renderTop(){
+            this.renderBreadcrumb();
+            this.renderChildren();
+            this.updateConnections();      
+        }
+
         renderBreadcrumb() {
             this.breadcrumbRow.innerHTML = "";
             this.currentFocusPath.forEach((node, index) => {
@@ -972,7 +978,11 @@
                     let n = node[i];
                     if (n && typeof n.body === "string") {
                         //n.body = replaceAllCaseInsensitiveRegex(n.body, fromStr, toStr)
+                        const oldbody = n.body;
                         n.body = n.body.replaceAll(fromStr, toStr);
+                        if (n.body != oldbody){
+                            this.triggerHook('rewritten', n);
+                        }
                     }
                 }
             }

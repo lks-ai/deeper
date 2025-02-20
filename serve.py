@@ -4,39 +4,19 @@
 import json
 from os import listdir
 from os.path import isfile, join
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict
 from util import PATH, think, fetch_models, load_defaults
 
 app = FastAPI()
 
 """
-Today:
-    finish sophia.getModels()
-    add `agent` to options menu on nodes
-        agents include models
-            once agent is selected, it updates the config model and agent fields
-    - loading and saving
-    - prompt history
-        add to the saved data!
-    drag & drop
-    - docker setup
-    - hash based navigation - for node ids
-        in server side, node id can be overwritten with uuid for uniqueness when saving
-        make a UUID index which holds all entities that are saved
-    copy/paste/duplicate branch
-    - mouse scrolling on nav rows = horizontal scroll up and down
-    - nicer markdown styling + check table formatting and other pieces
-    templates for prowl scripts
-        prompts / {template_name} / ...
-        prompts/default will load first in stack, then the template name if used
-        make UI part for this too on options panel: study, roleplay, etc. can be pre-built
-        drop down option on the node form
-    set defaults.yaml up to give default configs from the server, for different agents
-        maybe make it a trickle tree over the prompts folder
+TODO
+    multimodal /think endpoint
     fix language integration
+    websockets endpoint
 """
 
 # Add a CORS middleware with a lenient policy:
@@ -117,6 +97,131 @@ async def load_endpoint(name: str):
         raise HTTPException(status_code=500, detail=str(e))
     
 from fastapi.staticfiles import StaticFiles
+
+
+##########################################
+# WebSocket support for live collaboration
+##########################################
+
+class ConnectionManager:
+    def __init__(self):
+        # Channels: mapping channel name -> a dictionary with "metadata" and "connections".
+        # "connections" is a dict mapping user IDs to their WebSocket.
+        self.channels: Dict[str, Dict] = {}
+        self.users:dict[str, dict] = {}
+
+    def get_user(self, user_id:str, channel=None):
+        if user_id not in self.users:
+            self.users[user_id] = {'id': user_id, 'channel': channel, 'metadata': {}}
+        if channel is not None:
+            self.users[user_id]['channel'] = channel
+        return self.users[user_id]
+
+    async def connect(self, websocket: WebSocket, user_id: str, channel):
+        # await websocket.accept()
+        user = self.get_user(user_id, channel=channel)
+        print("User:", user)
+        channel = user['channel']
+        self.disconnect_all(user_id)
+        if channel not in self.channels:
+            self.channels[channel] = {"metadata": {}, "connections": {}}
+        self.channels[channel]["connections"][user_id] = websocket
+
+    def disconnect(self, websocket: WebSocket, user_id: str, channel: str):
+        if channel in self.channels:
+            self.channels[channel]["connections"].pop(user_id, None)
+            # Optionally, delete channel if empty.
+            if not self.channels[channel]["connections"]:
+                del self.channels[channel]
+                
+    def disconnect_all(self, user_id: str):
+        for name, channel in self.channels.items():
+            channel["connections"].pop(user_id, None)
+
+    async def broadcast(self, message: dict, sender: WebSocket, channel: str):
+        # Ensure message is JSON and has an "action" key.
+        print('Broadcasting on', channel, message)
+        if "action" not in message:
+            message["action"] = "unknown"
+        if channel in self.channels:
+            for uid, connection in self.channels[channel]["connections"].items():
+                print("client", uid)
+                if connection != sender:
+                    print("sending")
+                    await connection.send_json(message)
+
+    def create_channel(self, channel: str, metadata: dict = None):
+        if channel not in self.channels:
+            self.channels[channel] = {"metadata": metadata or {}, "connections": {}}
+        else:
+            raise Exception("Channel already exists")
+
+    def update_channel(self, channel: str, metadata: dict):
+        if channel in self.channels:
+            self.channels[channel]["metadata"] = metadata
+        else:
+            raise Exception("Channel does not exist")
+
+    def delete_channel(self, channel: str):
+        if channel in self.channels:
+            del self.channels[channel]
+
+    def get_channel(self, channel: str):
+        return self.channels.get(channel)
+
+    def list_channels(self):
+        return list(self.channels.keys())
+
+manager = ConnectionManager()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    user_id = None
+    channel = None
+    try:
+        await websocket.accept()
+        # Expect the first message to be a "join_channel" action with userId and channel.
+        join_data:dict = await websocket.receive_json()
+        print(join_data)
+        if join_data.get("action") != "join_channel":
+            await websocket.close(code=1008)
+            return
+        user_id = join_data.get("userId")
+        channel = join_data.get("channel")
+
+        async def join_channel(user_id, channel):
+            if not user_id or not channel:
+                await websocket.close(code=1008)
+                return
+            await manager.connect(websocket, user_id, channel)
+            # Optionally, broadcast a join message.
+            await manager.broadcast({"action": "user_joined", "userId": user_id, "channel": channel},
+                                    sender=websocket, channel=channel)
+
+        await join_channel(user_id, channel)
+        user = manager.get_user(user_id)
+        while True:
+            message = await websocket.receive_json()
+            # Ensure each message has an "action" key.
+            print(message)
+            if "action" not in message:
+                message["action"] = "unknown"
+            # You can add logic here to handle specific actions (update, delete, etc.)
+            action = message['action']
+            if action == 'join_channel':
+                print(f"JOINING CHANNEL {user_id}, {message['channel']}")
+                await join_channel(user_id, message['channel'])
+            else:
+                await manager.broadcast(message, sender=websocket, channel=user['channel'])
+    except WebSocketDisconnect:
+        user = manager.get_user(user_id)
+        manager.disconnect(websocket, user_id, user['channel'])
+        # Optionally, broadcast a disconnect message.
+        await manager.broadcast({"action": "user_left", "userId": user_id, "channel": channel},
+                                sender=websocket, channel=channel)
+    except Exception as e:
+        print("Error in websocket_endpoint:", e)
+        await websocket.close(code=1011)
 
 # Mount the "web" directory at the root.
 # Endpoints defined above will override these routes.

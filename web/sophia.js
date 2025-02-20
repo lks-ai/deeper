@@ -402,6 +402,98 @@ document.addEventListener("DOMContentLoaded", () => {
   Sophia client stuff
   */
 
+  // Initialize the websockets client
+  // TODO needs to now send actions from this userId to sophia.client upon
+  //  encoding or rewriting a node
+  //  any time the body is changed
+  //  perhaps make a hierarchyEditor.update function and route everythign through that?
+  //  perhaps not and just send a message immediately
+  //  needs to change the channel to whatever channel that is the root ID of the tree
+  //  user can be given by SSO or just a random user ID
+  sophia.user = {name: 'anon', id: window.nav.getId()};
+
+  const wsClient = new SophiaWebSocketClient(`ws://${window.location.host}/ws`);
+  wsClient.on("open", (e) => {
+    console.log("Connected", e);
+    sophia.joinChannel(hierarchyEditor.treeData.id);
+  });
+  wsClient.on("update", (msg) => {
+    console.log("Update received", msg);
+    // get the node from the ID
+    // get the update
+    let node = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.nodeId);
+    if (node){
+      console.log(`node found: ${node.id}`);
+      for (let key in msg.fields){
+        if (msg.fields.hasOwnProperty(key)){
+          let v = msg.fields[key];
+          node[key] = v;
+        }
+      }
+      hierarchyEditor.renderTop();
+    }
+  });
+  wsClient.on("create", (msg) => {
+    console.log("Create received", msg);
+    // get parent id
+    // create child from parent just like in send
+    let parentNode = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.parentId);
+    if (parentNode){
+      let targetNode = hierarchyEditor.createNode(msg.fields.name, parentNode, type=msg.fields.type);
+      targetNode = {...targetNode, ...msg.fields};
+      targetNode.id = msg.nodeId;
+      parentNode.children.push(targetNode);
+      hierarchyEditor.renderTop();
+    }
+
+  });
+  wsClient.on("user_joined", (msg) => console.log("User joined", msg));
+  sophia.client = wsClient;
+
+  sophia.joinChannel = function(channel){
+    const data = {
+      action: 'join_channel',
+      userId: sophia.user.id,
+      channel: channel
+    };
+    console.log("join", data);
+    sophia.client.send(data);
+  }
+
+  sophia.sendCreate = function(node){
+    let data = {
+      action: 'create',
+      userId: sophia.user.id,
+      nodeId: node.id,
+      parentId: node.parent.id,
+      fields: {
+        name: node.name,
+        type: node.type,
+        metadata: node.metadata
+      }
+    };
+    sophia.client.send(data);
+  }
+
+  sophia.sendUpdate = function(node, fields={}){
+    // fields is a diff of what has changed in the structure of a node
+    let data = {
+      action: 'update',
+      userId: sophia.user.id,
+      nodeId: node.id,
+      fields: fields
+    };
+    sophia.client.send(data);
+  }
+
+  hierarchyEditor.on('rewritten', (node) => {
+    sophia.sendUpdate(node, {
+      'body': node.body,
+    });
+  });
+
+  /* Functional sophia client that edits structure */
+
   sophia.formatContextEntry = function(node){
     let user_name = hierarchyEditor.getConfigValue(node, 'user_name');
     let agent_name = hierarchyEditor.getConfigValue(node, 'agent_name');
@@ -443,6 +535,59 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     return o;
+  }
+
+  sophia.encodeLink = function(nodes, tags, target){
+    // given a list of nodes, any tag string and a target node, queue link rewrites
+    if (typeof(tags) === 'string') tags = [tags, tags.toLowerCase()];
+    tags.forEach((tag)=>{
+      hierarchyEditor.queueRewrite(
+        nodes,
+        `**${tag}**`,
+        `[${tag}](#${target.id})`  
+      );
+    });
+    // update the links (for visualization and graph functionalities)
+    for (let i = 0; i < nodes.length; i++)
+      sophia.updateLinks(nodes[i]);
+  }
+
+  sophia.mutualizeLinks = function(node, depthAncestors=2, depthAunts=1, depthCousins=0){
+      // Perform peer and ancestor rewrites using the targetNode.metadata.tag to make them link here.
+      // start with any ancestors `depthAncestors` generations back
+      const ancestors = hierarchyEditor.getAncestors(node, depthAncestors);
+      // Get related aunt nodes for ancestors `depthPeer` generations back
+      let aunts = [];
+      let cousins = [];
+      for (let i = 0; i < depthAunts && i < ancestors.length; i++){
+        let ns = hierarchyEditor.getPeers(ancestors[i]);
+        if (ns){
+          aunts.push(...ns);
+          if (i < depthCousins){
+            for (let a = 0; a < ns.length; a++){
+              let aunt = ns[a];
+              if (aunt.children) cousins.push(...aunt.children);
+            }
+          }
+        }
+      }
+      // Concat to all peers, ancestors and aunts
+      let contexts = [...hierarchyEditor.getPeers(node, true), ...ancestors, ...aunts];
+      // Encode node link in all contexts
+      if (node.metadata.tag){
+        let tag = node.metadata.tag;
+        sophia.encodeLink(contexts, tag, node);
+        
+      }
+      // Reverse rewrite context nodes that came later than targetNode such that they point to target node
+      for (let i = 0; i < contexts.length; i++){
+        let peer = contexts[i];
+        if (peer.metadata.tag){
+          let tag = peer.metadata.tag;
+          let contexts = [node];
+          sophia.encodeLink(contexts, tag, peer);
+        }
+      }
   }
 
   sophia.compileContext = function(config, maxLevels=5, onChild=false){
@@ -583,19 +728,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!createChild){
       targetNode = parentNode;
       targetNode.name = "Thinking...";
+      sophia.sendUpdate(targetNode, {name: targetNode.name});
     }else{
       targetNode = hierarchyEditor.createNode("Thinking...", parentNode, type=newNodeType);
       parentNode.children.push(targetNode);
       // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
       if (label) {
         targetNode.metadata.tag = trim(label, ':*#,.-');
-        //targetNode.body.replace(':** ', '**: '); // IS this Dirty?
-        hierarchyEditor.queueRewrite(
-          [parentNode],
-          `**${label}**`,
-          `[${label}](#${targetNode.id})`
-        );
+        sophia.encodeLink([parentNode], label, targetNode);
       }
+      sophia.sendCreate(targetNode);
     }
     let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
     
@@ -639,30 +781,9 @@ document.addEventListener("DOMContentLoaded", () => {
       let cleanName = result.label.replace('Knowledge Label:', '')
       targetNode.name = trim(cleanName, '- ');
       targetNode.body = result.response;
+      sophia.sendUpdate(targetNode, {name: targetNode.name, body: targetNode.body, metadata: targetNode.metadata});
 
-      // Perform peer and ancestor rewrites using the targetNode.metadata.tag to make them link here.
-      if (targetNode.metadata.tag){
-        let tag = targetNode.metadata.tag;
-        hierarchyEditor.queueRewrite(
-          [...hierarchyEditor.getPeers(targetNode, true), ...hierarchyEditor.getAncestors(targetNode, 2)],
-          `**${tag}**`,
-          `[${tag}](#${targetNode.id})`
-        );
-      }
-      // Reverse rewrite peers that came later than targetNode such that they point to target node
-      let rpeers = hierarchyEditor.getPeers(targetNode);
-      for (let ip = 0; ip < rpeers.length; ip++){
-        let peer = rpeers[ip];
-        if (peer.metadata.tag){
-          let tag = peer.metadata.tag;
-          hierarchyEditor.queueRewrite(
-            [targetNode],
-            `**${tag}**`,
-            `[${tag}](#${peer.id})`  
-          );
-        }
-      };
-      sophia.updateLinks(targetNode);
+      sophia.mutualizeLinks(targetNode);
 
       // Set the interface as "touched"
       sophia.dirty = true;
@@ -712,6 +833,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sophia.treeName = name;
       sophia.dirty = true;
       sophia.traverseBranch(hierarchyEditor.treeData, sophia.updateLinks);
+      sophia.joinChannel(hierarchyEditor.treeData.id);
       setTimeout(function(){
         hierarchyEditor.render();
       }, 0);
@@ -784,4 +906,5 @@ document.addEventListener("DOMContentLoaded", () => {
     hierarchyEditor.treeData.config = hierarchyEditor.config;
   }, 0);
 
+  sophia.client.connect();
 });
