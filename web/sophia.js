@@ -520,6 +520,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Updates the tree visualizer if it is showing on the client
     if (!window.treeVisualizer) return;
     window.treeVisualizer.treeData = hierarchyEditor.treeData;
+    window.treeVisualizer.computeLayout();
+    window.treeVisualizer.rearrange();
     window.treeVisualizer.render();
   }
 
