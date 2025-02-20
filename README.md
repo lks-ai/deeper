@@ -126,8 +126,8 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - Multi-directional context stacking (beyond the simple root-to-leaf path).
 - Safe handling of multimedia/HTML content.
 - Auto-agent switching.
-- User Accounts.
-- WebSockets for collaboration and background processing.
+- ✅ User Accounts.
+- ✅ WebSockets for collaboration and background processing.
 - Simplified RAG without heavy overhead (e.g., ModernBERT).
 
 ---

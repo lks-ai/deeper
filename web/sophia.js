@@ -416,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
   //  user can be given by SSO or just a random user ID
   sophia.user = {name: 'anon', id: window.nav.getId()};
 
-  const wsClient = new SophiaWebSocketClient(`ws://${window.location.host}/ws`);
+  const wsClient = new SophiaWebSocketClient(`${window.location.protocol == 'https' ? 'wss': 'ws'}://${window.location.host}/ws`);
   wsClient.on("open", (e) => {
     console.log("Connected", e);
     sophia.joinChannel(hierarchyEditor.treeData.id);
