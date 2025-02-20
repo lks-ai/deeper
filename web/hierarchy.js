@@ -36,21 +36,28 @@
         }
         
         getId() {
-            // Generate a UUID v4 compatible hash for content Ids
+            // Create an array of 16 random bytes
             const bytes = crypto.getRandomValues(new Uint8Array(16));
-            const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-            
-            // Insert hyphens in the correct positions
+          
+            // Per RFC 4122:
+            // - Set the 4 most significant bits of byte 6 to 0100, indicating version 4.
+            // - Set the 2 most significant bits of byte 8 to 10, indicating the variant.
+            bytes[6] = (bytes[6] & 0x0f) | 0x40;
+            bytes[8] = (bytes[8] & 0x3f) | 0x80;
+          
+            // Convert each byte to a two-digit hexadecimal string.
+            const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0'));
+          
+            // Format the UUID string: 8-4-4-4-12
             return [
-                hex.substr(0, 8),
-                hex.substr(8, 4),
-                '4',
-                hex.substr(12, 3),
-                hex.substr(15, 4),
-                'b',
-                hex.substr(19, 12)
+              hex.slice(0, 4).join(''),   // 4 bytes = 8 hex digits
+              hex.slice(4, 6).join(''),   // 2 bytes = 4 hex digits
+              hex.slice(6, 8).join(''),   // 2 bytes = 4 hex digits (includes version)
+              hex.slice(8, 10).join(''),  // 2 bytes = 4 hex digits (includes variant)
+              hex.slice(10, 16).join('')  // 6 bytes = 12 hex digits
             ].join('-');
         }
+          
     }
     window.nav = new Nav();
     /**
