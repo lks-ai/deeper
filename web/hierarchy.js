@@ -512,6 +512,7 @@
                 currentNode.name = nameInput.value;
                 this.renderBreadcrumb();
                 this.updateConnections();
+                this.triggerHook('renamed', currentNode);
             });
             viewerContainer.appendChild(nameInput);
             

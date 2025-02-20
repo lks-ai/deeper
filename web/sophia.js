@@ -8,7 +8,7 @@ const HOST = window.location.protocol + "//" + window.location.host;
 
 /* Utility functions */
 
-function showModal(contentHtml) {
+function showModal(contentHtml, closeCallback=null) {
     // Create the overlay that covers the full page
     const overlay = document.createElement("div");
     overlay.className = 'modal-overlay';
@@ -40,6 +40,7 @@ function showModal(contentHtml) {
     closeButton.id = "close-button";
     closeButton.addEventListener("click", () => {
       document.body.removeChild(overlay);
+      if (closeCallback) closeCallback();
     });
   
     // Append the close button to the modal container
@@ -229,13 +230,15 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         currentPath: window.hierarchyEditor.currentFocusPath
       });
-
+      window.treeVisualizer = visualizer;
     }, 200);
 
     showModal(`
         <h2>Tree View<br><small>${hierarchyEditor.treeData.name}</small></h2>
         <canvas id="treeView" width="600" height="600"></canvas>
-    `);
+    `, closeCallback=function(){
+      window.treeVisualizer = null;
+    });
   }, "Tree View");
 
   // Register a hook for when a node is created.
@@ -254,6 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Register a hook for when the edit form is submitted.
   window.hierarchyEditor.on("editFormSubmitted", (data) => {
     console.log("Edit form submitted for:", data.node);
+    sophia.sendUpdate(data.node, {name: data.node.name, body: data.node.body, metadata: data.node.metadata});
   });
 
   // Hook for swiping left
@@ -430,7 +434,13 @@ document.addEventListener("DOMContentLoaded", () => {
           node[key] = v;
         }
       }
-      hierarchyEditor.renderTop();
+      sophia.updateLinks(node);
+      if (node == hierarchyEditor.getCurrentNode()){
+        hierarchyEditor.render();
+      }else{
+        hierarchyEditor.renderTop();
+      }
+      sophia.updateTreeVisualizer();
     }
   });
   wsClient.on("create", (msg) => {
@@ -443,7 +453,9 @@ document.addEventListener("DOMContentLoaded", () => {
       targetNode = {...targetNode, ...msg.fields};
       targetNode.id = msg.nodeId;
       parentNode.children.push(targetNode);
+      sophia.updateLinks(parentNode);
       hierarchyEditor.renderTop();
+      sophia.updateTreeVisualizer();
     }
 
   });
@@ -486,11 +498,30 @@ document.addEventListener("DOMContentLoaded", () => {
     sophia.client.send(data);
   }
 
+  sophia.sendSyncRequest = function(){
+    let data = {
+      action: 'fullsync',
+      userId: sophia.user.id,
+    };
+    sophia.client.send(data);
+  }
+
   hierarchyEditor.on('rewritten', (node) => {
     sophia.sendUpdate(node, {
       'body': node.body,
     });
   });
+
+  hierarchyEditor.on('renamed', (node) => {
+    sophia.sendUpdate(node, {name: node.name});
+  });
+
+  sophia.updateTreeVisualizer = function(){
+    // Updates the tree visualizer if it is showing on the client
+    if (!window.treeVisualizer) return;
+    window.treeVisualizer.treeData = hierarchyEditor.treeData;
+    window.treeVisualizer.render();
+  }
 
   /* Functional sophia client that edits structure */
 
@@ -746,6 +777,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (acfg){
       targetNode.config = acfg;
       data.agent = config.agent;
+      sophia.sendUpdate(targetNode, {config: targetNode.config});
     }
 
     setTimeout(function(){
