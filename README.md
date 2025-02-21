@@ -87,7 +87,8 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 
 ### UI Enhancements
 - ✅ Swipe left/right: Navigate among peers and between parent/child nodes.
-- ✅ Model selection (Agents) & in-UI agent prompt controls.
+- ✅ Model selection (Agents).
+- in-UI agent prompt controls.
 - ✅ Hash-based navigation (syncs browser history with UX).
 - ✅ Nodes assigned UUIDs.
 - ✅ Thought View Breakdown.
@@ -101,7 +102,12 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - ✅ Code block cleanup with copy function.
 - ✅ Fix prompt history selection on mobile.
 - ✅ Properly display multiline metadata.
-- Tree selector modal for branch selection.
+- Tree selector widget for branch selection.
+- Context toolbar functions
+    - Move
+    - Copy/Paste
+- Main toolbar functions
+    - Regenerate Branch (special paste that uses a copied branch) 
 - ✅ Update button to reference current node's content for revision.
 - JS-based tree diff and tregex integration.
 - ✅ Prevent user from leaving the page accidentally.
@@ -111,24 +117,25 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - ✅ Write config to the root node on save.
 - Multi-directional rewriting (based on children/peers).
 - Automated branch editing (simple and content-based rewriting).
-- Link-based RAG for context recall.
+- Link-based RAG (LRAG?) for context recall.
 - Reverse rewrites on peers (asynchronous editing).
 - Branch Traversal for branch templates
-
-### SysOps
-- ✅ Fix HTTPS on the demo site.
+- Filtered path search for agents (only return nodes of condition)
+- Agent *Workers*: agents for each node can further think and refine their content based on changing context
 
 ### Server-Side Enhancements
 - Web search capability.
 - Integrated web browser tool.
-- Agent prompts for various roles (coder, roleplayer, etc.).
+- Finish Agent prompts for various roles (coder, roleplayer, etc.).
 - Tree-based prompt templates (for grafting or regeneration).
 - Multi-directional context stacking (beyond the simple root-to-leaf path).
 - Safe handling of multimedia/HTML content.
 - Auto-agent switching.
 - ✅ User Accounts.
 - ✅ WebSockets for collaboration and background processing.
+- Add sockets buffer for "syncing from load" on a client who's late to the party
 - Simplified RAG without heavy overhead (e.g., ModernBERT).
+- Pypandoc based Export (Tree -> Docx) and (Docx -> Tree)
 
 ---
 
