@@ -122,6 +122,8 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - Branch Traversal for branch templates
 - Filtered path search for agents (only return nodes of condition)
 - Agent *Workers*: agents for each node can further think and refine their content based on changing context
+- Audio input, Document input: with the ability to chunk/summarize and then organize that into a tree
+- Auto-Propagation and Auto-Growth: respectively having it modify a message through a branch to the leaves or having it self-reply (either naively or using an LLM task)
 
 ### Server-Side Enhancements
 - Web search capability.
