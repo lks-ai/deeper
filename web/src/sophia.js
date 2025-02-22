@@ -1,5 +1,6 @@
 //Sophia: (Deepr.wiki)
 // github.com/lks-ai/deeper
+// author: github.com/newsbubbles
 
 // This script initializes some example node types.
 // It should be loaded after hierarchy.js and after the DOM is ready.
@@ -414,7 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
   //  perhaps not and just send a message immediately
   //  needs to change the channel to whatever channel that is the root ID of the tree
   //  user can be given by SSO or just a random user ID
-  sophia.user = {name: 'anon', id: window.nav.getId()};
+  sophia.user = {name: localStorage.getItem('userName') || 'anon', id: window.nav.getId()};
   //sophia.
 
   /**
@@ -436,6 +437,8 @@ document.addEventListener("DOMContentLoaded", () => {
       AuthManager.verify(jwt, true)
         .then((userData) => {
           // Update localStorage with server-verified user data.
+          sophia.user.id = userData.id;
+          if (userData.name) sophia.user.name = userData.name;
           localStorage.setItem('userId', userData.id);
           if (userData.image_url) {
             localStorage.setItem('image_url', userData.image_url);
@@ -457,7 +460,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
   }
+
+  sophia.isLoggedIn = function(){
+    const jwt = localStorage.getItem('jwt');
+    if (jwt) return true; else return false;
+  }
   
+  //
+  //  Websocket Client for realtime colab
+  //
+
   const wsClient = new SophiaWebSocketClient(`${window.location.protocol == 'https:' ? 'wss': 'ws'}://${window.location.host}/ws`);
   wsClient.on("open", (e) => {
     console.log("Connected", e);
@@ -501,7 +513,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
   });
-  wsClient.on("user_joined", (msg) => console.log("User joined", msg));
+  wsClient.on("user_joined", (msg) => {
+    console.log("User joined", msg)
+  });
+  wsClient.on("user_update", (msg) => {
+    console.log("User updated their data", msg)
+  });
   sophia.client = wsClient;
 
   sophia.joinChannel = function(channel){
@@ -535,6 +552,15 @@ document.addEventListener("DOMContentLoaded", () => {
       action: 'update',
       userId: sophia.user.id,
       nodeId: node.id,
+      fields: fields
+    };
+    sophia.client.send(data);
+  }
+
+  sophia.updateUser = function(fields={}){
+    let data = {
+      action: 'user_update',
+      userId: sophia.user.id,
       fields: fields
     };
     sophia.client.send(data);
@@ -1016,14 +1042,38 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       console.log("User is logged in.");
       // TODO Here we can also do stuff making sure `user` is set to the userId etc.
+      hierarchyEditor.addToolbarButton('🧍', ()=>{
+        showModal(`
+          <h2><span id="title-username">${sophia.user.name}</span><br><small>Account Settings</small></h2>
+          <ul>
+            <li>
+              <label>User Name</label>
+              <input type="text" placeholder="username" value="${sophia.user.name}" onchange="sophia.user.name=this.value; document.getElementById('title-username').innerHTML=this.value;" onkeyup="this.onchange()">
+            </li>
+            <li>
+              <label>Session</label>
+              <button onclick="sophia.logOut()">Log Out</button>
+            </li>
+          </ul>
+        `,
+        function(){
+          // onclose function
+          localStorage.setItem('userName', sophia.user.name);
+          sophia.updateUser({name: sophia.user.name});
+        });
+      }, `Account: ${sophia.user.name}`);
+      hierarchyEditor.render();
     } else {
       console.log("User is not logged in.");
       // Optionally, trigger UI changes for guests.
+      hierarchyEditor.addToolbarButton('🚪', ()=>{window.location.href=`${window.location.origin}/login`;}, 'Log In')
     }
+
+    // Connect websocket client
+    sophia.client.connect();
+
   });
 
 
-  // Connect websocket client
-  sophia.client.connect();
 
 });

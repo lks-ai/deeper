@@ -227,10 +227,6 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Error in websocket_endpoint:", e)
         await websocket.close(code=1011)
 
-# Mount the "web" directory at the root.
-# Endpoints defined above will override these routes.
-app.mount("/", StaticFiles(directory="web", html=True), name="static")
-
 # AUTH FUNCTIONALITY
 # - auth service provider
 # - auth storage provider
@@ -333,6 +329,14 @@ async def auth_endpoint(auth_req: AuthRequest, authorization: Optional[str] = He
         method_used = "default"
 
     return {"user": {"id": user_id}, "method": method_used}
+
+
+
+#### KEEP THIS AT THE END!
+
+# Mount the "web" directory at the root.
+# Endpoints defined above will override these routes.
+app.mount("/", StaticFiles(directory="web", html=True), name="static")
 
 
 # For local testing: run `python main.py` or `uvicorn main:app --host 0.0.0.0 --port 8123`
