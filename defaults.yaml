@@ -2,12 +2,14 @@ agents:
   research:
     description: Use for critical thinking and research
     model: qwen/qwen-2.5-7b-instruct
+    model_vision: meta-llama/llama-3.2-90b-vision-instruct
     agent_name: Expert
     user_name: Request
     node_type: knowledge
   roleplay:
     description: Use for world building and roleplaying
     model: meta-llama/llama-3.1-70b-instruct
+    model_vision: meta-llama/llama-3.2-90b-vision-instruct
     agent_name: Roleplayer
     user_name: Player
   coding:
@@ -17,6 +19,7 @@ agents:
     node_type: code
   marketing:
     model: google/gemini-2.0-flash-001
+    model_vision: meta-llama/llama-3.2-90b-vision-instruct
     agent_name: Expert Marketer
     user_name: Consulting Client
   math:

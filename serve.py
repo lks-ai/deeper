@@ -4,11 +4,15 @@
 import json
 from os import listdir
 from os.path import isfile, join
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict
 from util import PATH, think, fetch_models, load_defaults
+
+from fastapi.security import OAuth2PasswordBearer
+import jwt
+from jwt import PyJWTError
 
 app = FastAPI()
 
@@ -226,6 +230,109 @@ async def websocket_endpoint(websocket: WebSocket):
 # Mount the "web" directory at the root.
 # Endpoints defined above will override these routes.
 app.mount("/", StaticFiles(directory="web", html=True), name="static")
+
+# AUTH FUNCTIONALITY
+# - auth service provider
+# - auth storage provider
+# - content storage provider
+# - Or, none of that if using no jwt with an anon user
+
+import os
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+ALGORITHM = os.getenv('JWT_ALGORITHM')
+JWT_UID_FIELD = os.getenv('JWT_UID_FIELD')
+
+# Pydantic model for the auth request body.
+class AuthRequest(BaseModel):
+    use_oauth: bool = False  # If true, perform OAuth-style verification.
+    token: Optional[str] = None  # Optional token sent in the body.
+
+def get_token(token_from_body: Optional[str], auth_header: Optional[str]) -> str:
+    """
+    Returns the JWT token from the request body if provided; otherwise, extracts it from the Authorization header.
+    """
+    if token_from_body:
+        return token_from_body
+    if auth_header:
+        scheme, _, token = auth_header.partition(" ")
+        if scheme.lower() != "bearer" or not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token scheme in header",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return token
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Missing token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+def verify_jwt_oauth(token: str = Depends(oauth2_scheme)) -> Optional[str]:
+    #print('JWT Decode:', token)
+    #logger.info(f'Token: {token}')
+    try:
+        payload = jwt.decode(token, 
+            SECRET_KEY, 
+            algorithms=[ALGORITHM],
+            audience='authenticated',
+        )
+        user_id: str = payload.get(JWT_UID_FIELD)
+        #logger.info(f'Payload: {payload}')
+        if user_id is None:
+            #logger.error('JWT Error: NoUID')
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user_id
+    except Exception as e:
+        #logger.error(f'JWT Error: {e}')
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials: " + repr(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+def verify_jwt_default(token: str) -> str:
+    """
+    Verifies the token using default settings (no audience check).
+    Returns the user_id if valid.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: Optional[str] = payload.get(JWT_UID_FIELD)
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials: missing user id",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user_id
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials (default): " + repr(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+@app.post("/auth")
+async def auth_endpoint(auth_req: AuthRequest, authorization: Optional[str] = Header(None)):
+    """
+    Verifies the JWT token using one of two methods, based on the 'use_oauth' flag in the request body.
+    If successful, returns the user information derived solely from the token.
+    """
+    token = get_token(auth_req.token, authorization)
+    if auth_req.use_oauth:
+        user_id = verify_jwt_oauth(token)
+        method_used = "oauth"
+    else:
+        user_id = verify_jwt_default(token)
+        method_used = "default"
+
+    return {"user": {"id": user_id}, "method": method_used}
 
 
 # For local testing: run `python main.py` or `uvicorn main:app --host 0.0.0.0 --port 8123`

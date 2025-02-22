@@ -415,7 +415,49 @@ document.addEventListener("DOMContentLoaded", () => {
   //  needs to change the channel to whatever channel that is the root ID of the tree
   //  user can be given by SSO or just a random user ID
   sophia.user = {name: 'anon', id: window.nav.getId()};
+  //sophia.
 
+  /**
+   * Attempts to automatically log in the user based on the JWT stored in localStorage.
+   * Uses the OAuth verification flow.
+   * If successful, updates localStorage with userId and additional fields (image_url, userName)
+   * and returns a Promise that resolves to true. Otherwise, returns false.
+   */
+  sophia.autoLogin = function() {
+    return new Promise((resolve) => {
+      const jwt = localStorage.getItem('jwt');
+      if (!jwt) {
+        console.log("No JWT found in localStorage.");
+        resolve(false);
+        return;
+      }
+      
+      // Use the OAuth verification flow (set useOAuth to true).
+      AuthManager.verify(jwt, true)
+        .then((userData) => {
+          // Update localStorage with server-verified user data.
+          localStorage.setItem('userId', userData.id);
+          if (userData.image_url) {
+            localStorage.setItem('image_url', userData.image_url);
+          }
+          if (userData.name) {
+            localStorage.setItem('userName', userData.name);
+          }
+          console.log("Auto login successful:", userData);
+          resolve(true);
+        })
+        .catch((error) => {
+          console.error("Auto login failed:", error);
+          // Clear invalid tokens and user data.
+          localStorage.removeItem('jwt');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('image_url');
+          localStorage.removeItem('userName');
+          resolve(false);
+        });
+    });
+  }
+  
   const wsClient = new SophiaWebSocketClient(`${window.location.protocol == 'https:' ? 'wss': 'ws'}://${window.location.host}/ws`);
   wsClient.on("open", (e) => {
     console.log("Connected", e);
@@ -871,7 +913,9 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(function(){
         hierarchyEditor.render();
       }, 0);
-          
+      // setTimeout(function(){
+      //   RHEmbed.loadTreeData(hierarchyEditor.treeData);
+      // }, 100);
     } catch (error) {
       console.error("Failed to load data:", error);
       throw error;
@@ -900,9 +944,28 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // TODO RHEmbed hybrid search
+
+  // sophia.query = function(queryText, topN) {
+  //   topN = topN || 5;
+  //   // Compute the current guidance epsilon based on tree size.
+  //   var epsilon = RHEmbed.utils.computeGuidanceEpsilon();
+  //   if (epsilon > 0) {
+  //     console.log("Using distribution-based search results. Guidance epsilon:", epsilon.toFixed(3));
+  //     // Return distribution-based results.
+  //     return RHEmbed.Query.queryNodesDistribution(queryText, topN);
+  //   } else {
+  //     console.log("Using model-based search results.");
+  //     // Return model-based (embedding cosine similarity) results.
+  //     return RHEmbed.Query.queryNodes(queryText, topN);
+  //   }
+  // }
   
   // Expose sophia to the window scope
   window.sophia = sophia;
+
+  // HASH BASED NAV
 
   // Load with shares on hash
   sophia._loadFromHash = async function(){
@@ -940,5 +1003,27 @@ document.addEventListener("DOMContentLoaded", () => {
     hierarchyEditor.treeData.config = hierarchyEditor.config;
   }, 0);
 
+  // Attempt to automatically log in and set interface elements
+  sophia.autoLogin().then((isLoggedIn) => {
+    if (isLoggedIn) {
+      // For example, update the user badge with the stored image_url.
+      const imageUrl = localStorage.getItem('image_url');
+      if (imageUrl) {
+        const userBadge = document.getElementById('userBadge');
+        if (userBadge) {
+          userBadge.src = imageUrl;
+        }
+      }
+      console.log("User is logged in.");
+      // TODO Here we can also do stuff making sure `user` is set to the userId etc.
+    } else {
+      console.log("User is not logged in.");
+      // Optionally, trigger UI changes for guests.
+    }
+  });
+
+
+  // Connect websocket client
   sophia.client.connect();
+
 });
