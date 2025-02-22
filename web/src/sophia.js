@@ -465,6 +465,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const jwt = localStorage.getItem('jwt');
     if (jwt) return true; else return false;
   }
+
+  sophia.logOut = function(){
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('image_url');
+    localStorage.removeItem('userName');
+    window.location.reload();
+  }
   
   //
   //  Websocket Client for realtime colab
@@ -1042,7 +1050,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       console.log("User is logged in.");
       // TODO Here we can also do stuff making sure `user` is set to the userId etc.
-      hierarchyEditor.addToolbarButton('🧍', ()=>{
+      hierarchyEditor.addToolbarButton('👤', ()=>{
         showModal(`
           <h2><span id="title-username">${sophia.user.name}</span><br><small>Account Settings</small></h2>
           <ul>
@@ -1066,7 +1074,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       console.log("User is not logged in.");
       // Optionally, trigger UI changes for guests.
-      hierarchyEditor.addToolbarButton('🚪', ()=>{window.location.href=`${window.location.origin}/login`;}, 'Log In')
+      hierarchyEditor.addToolbarButton('👤', ()=>{
+        window.location.href=`${window.location.origin}/login`;
+      }, 'Log In');
+      hierarchyEditor.render();
     }
 
     // Connect websocket client

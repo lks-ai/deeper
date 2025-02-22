@@ -13,6 +13,7 @@ from util import PATH, think, fetch_models, load_defaults
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt import PyJWTError
+import traceback
 
 app = FastAPI()
 
@@ -95,7 +96,7 @@ async def load_endpoint(name: str):
     try:
         with open(f"{PATH}{name}.json", "r") as f:
             data = json.load(f)
-        print(data)
+        # print(data)
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -107,52 +108,90 @@ from fastapi.staticfiles import StaticFiles
 # WebSocket support for live collaboration
 ##########################################
 
+class StreamUser:
+    def __init__(self, user_id: str, channel: str = None, name: str = 'anon', metadata: dict = None):
+        self.id = user_id
+        self.name = name
+        self.channel = channel  # the user's current channel
+        self.metadata = metadata or {}
+        # Mapping from channel to a list of WebSocket connections.
+        self.connections: dict[str, list[WebSocket]] = {}
+
+    def add_connection(self, channel: str, websocket: WebSocket):
+        if channel not in self.connections:
+            self.connections[channel] = []
+        if websocket not in self.connections[channel]:
+            self.connections[channel].append(websocket)
+
+    def remove_connection(self, channel: str, websocket: WebSocket):
+        if channel in self.connections:
+            if websocket in self.connections[channel]:
+                self.connections[channel].remove(websocket)
+            if not self.connections[channel]:
+                del self.connections[channel]
+
+    def has_connection(self, channel: str, websocket: WebSocket):
+        return channel in self.connections and websocket in self.connections[channel]
+
+
 class ConnectionManager:
     def __init__(self):
-        # Channels: mapping channel name -> a dictionary with "metadata" and "connections".
-        # "connections" is a dict mapping user IDs to their WebSocket.
-        self.channels: Dict[str, Dict] = {}
-        self.users:dict[str, dict] = {}
+        # Channels: mapping channel name -> {"metadata": dict, "connections": {user_id: StreamUser}}
+        self.channels: dict[str, dict] = {}
+        self.users: dict[str, StreamUser] = {}
+        # Map each websocket to the channel it’s currently in.
+        self.websocket_channels: dict[WebSocket, str] = {}
 
-    def get_user(self, user_id:str, channel=None):
+    def get_user(self, user_id: str, channel: str = None, name: str = 'anon'):
         if user_id not in self.users:
-            self.users[user_id] = {'id': user_id, 'channel': channel, 'metadata': {}}
+            self.users[user_id] = StreamUser(user_id, channel=channel, metadata={})
         if channel is not None:
-            self.users[user_id]['channel'] = channel
+            self.users[user_id].channel = channel
         return self.users[user_id]
 
-    async def connect(self, websocket: WebSocket, user_id: str, channel):
-        # await websocket.accept()
+    async def connect(self, websocket: WebSocket, user_id: str, channel: str):
+        print('connecting')
+        # If this websocket is already assigned to a channel, disconnect it first.
+        if websocket in self.websocket_channels:
+            old_channel = self.websocket_channels[websocket]
+            self.disconnect(websocket, user_id, old_channel)
+        # Record the new channel for this websocket.
+        self.websocket_channels[websocket] = channel
+
         user = self.get_user(user_id, channel=channel)
-        print("User:", user)
-        channel = user['channel']
-        self.disconnect_all(user_id)
+        print('adding', user.__dict__)
+        user.add_connection(channel, websocket)
+        print("User:", user.__dict__)
+
         if channel not in self.channels:
             self.channels[channel] = {"metadata": {}, "connections": {}}
-        self.channels[channel]["connections"][user_id] = websocket
+        # Add or update the user's entry for this channel.
+        self.channels[channel]["connections"][user_id] = user
 
     def disconnect(self, websocket: WebSocket, user_id: str, channel: str):
         if channel in self.channels:
-            self.channels[channel]["connections"].pop(user_id, None)
-            # Optionally, delete channel if empty.
+            if user_id in self.channels[channel]['connections']:
+                user = self.get_user(user_id)
+                user.remove_connection(channel, websocket)
+                if not user.connections.get(channel):
+                    self.channels[channel]["connections"].pop(user_id, None)
+            # Remove the websocket from our mapping.
+            if websocket in self.websocket_channels:
+                del self.websocket_channels[websocket]
+            # Optionally, delete the channel if it has no connections.
             if not self.channels[channel]["connections"]:
                 del self.channels[channel]
-                
-    def disconnect_all(self, user_id: str):
-        for name, channel in self.channels.items():
-            channel["connections"].pop(user_id, None)
 
     async def broadcast(self, message: dict, sender: WebSocket, channel: str):
-        # Ensure message is JSON and has an "action" key.
         print('Broadcasting on', channel, message)
         if "action" not in message:
             message["action"] = "unknown"
         if channel in self.channels:
-            for uid, connection in self.channels[channel]["connections"].items():
-                print("client", uid)
-                if connection != sender:
-                    print("sending")
-                    await connection.send_json(message)
+            for uid, user in self.channels[channel]["connections"].items():
+                if channel in user.connections:
+                    for connection in user.connections[channel]:
+                        if connection != sender:
+                            await connection.send_json(message)
 
     def create_channel(self, channel: str, metadata: dict = None):
         if channel not in self.channels:
@@ -216,15 +255,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 print(f"JOINING CHANNEL {user_id}, {message['channel']}")
                 await join_channel(user_id, message['channel'])
             else:
-                await manager.broadcast(message, sender=websocket, channel=user['channel'])
+                await manager.broadcast(message, sender=websocket, channel=user.channel)
     except WebSocketDisconnect:
-        user = manager.get_user(user_id)
-        manager.disconnect(websocket, user_id, user['channel'])
+        user:StreamUser = manager.get_user(user_id)
+        manager.disconnect(websocket, user_id, user.channel)
+        user.remove_connection(channel, websocket)
         # Optionally, broadcast a disconnect message.
         await manager.broadcast({"action": "user_left", "userId": user_id, "channel": channel},
                                 sender=websocket, channel=channel)
     except Exception as e:
         print("Error in websocket_endpoint:", e)
+        traceback.print_exc()
         await websocket.close(code=1011)
 
 # AUTH FUNCTIONALITY
@@ -330,7 +371,24 @@ async def auth_endpoint(auth_req: AuthRequest, authorization: Optional[str] = He
 
     return {"user": {"id": user_id}, "method": method_used}
 
+from fastapi.responses import HTMLResponse
 
+@app.get("/login", response_class=HTMLResponse)
+async def serve_login():
+    
+    # Get the Supabase URL and anon key from environment variables.
+    SUPABASE_URL = os.getenv('SUPABASE_URL')
+    SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY')
+    
+    # Read the static HTML file.
+    with open('web/supabase.html', 'r') as f:
+        html = f.read()
+    
+    # Replace placeholders in the HTML.
+    html = html.replace('[[SUPABASE_ANON_KEY_HERE]]', SUPABASE_ANON_KEY)
+    html = html.replace('[[SUPABASE_URL_HERE]]', SUPABASE_URL)
+    
+    return HTMLResponse(content=html)
 
 #### KEEP THIS AT THE END!
 

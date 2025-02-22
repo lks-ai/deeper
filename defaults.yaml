@@ -32,4 +32,5 @@ agents:
     user_name: Patient
 
 user_config:
+  auth: supabase # can be supabase, local, none
   storage: local # can be supabase, local, none

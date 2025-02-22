@@ -46,11 +46,24 @@ Deepr Wiki is a local knowledge management tool driven by large language models.
 Create a `.env` file in the project root to configure your API endpoints and keys. For example, to use OpenRouter:
 
 ```dotenv
-# Endpoint and model (any OpenAI-compatible API)
+# LLM API (any OpenAI-compatible API)
+
 PROWL_VLLM_ENDPOINT=https://openrouter.ai/api
 PROWL_MODEL=qwen/qwen-2.5-7b-instruct
 # For hosted services that require an API key:
 PROWL_VENDOR_API_KEY=YOUR_API_KEY_HERE
+
+## AUTH
+
+# For User Accounts managed by Auth providers like supabase/firebase
+JWT_SECRET_KEY=za1O...
+JWT_ALGORITHM=HS256
+JWT_UID_FIELD=sub
+
+# For Supabase Auth
+SUPABASE_URL=https://{supabase_project_id}.supabase.co
+SUPABASE_ANON_KEY=ey...
+
 ```
 
 You can refer to `placeholder.env` for a sample configuration.
@@ -124,6 +137,7 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - Agent *Workers*: agents for each node can further think and refine their content based on changing context
 - Audio input, Document input: with the ability to chunk/summarize and then organize that into a tree
 - Auto-Propagation and Auto-Growth: respectively having it modify a message through a branch to the leaves or having it self-reply (either naively or using an LLM task)
+- Showing who else is in the tree ()
 
 ### Server-Side Enhancements
 - Web search capability.
@@ -136,8 +150,9 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - ✅ User Accounts.
 - ✅ WebSockets for collaboration and background processing.
 - Add sockets buffer for "syncing from load" on a client who's late to the party
-- Simplified RAG without heavy overhead (e.g., ModernBERT).
 - Pypandoc based Export (Tree -> Docx) and (Docx -> Tree)
+- Workspaces based storage for user colaboration and sharing
+    - includes user permissions, visibility, etc. for each tree
 
 ---
 
