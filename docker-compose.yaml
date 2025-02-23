@@ -7,6 +7,7 @@ services:
       - "8123:8123"
     volumes:
       - ./data:/app/data
+      - ./web:/app/web
       - ./prompts:/app/prompts
     env_file:
       - .env

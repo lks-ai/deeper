@@ -1,0 +1,91 @@
+/* FaTeX CSS – Styles for FaTeX-rendered math */
+
+/* Base text for math */
+.fatex-text {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 1.2em;
+    white-space: nowrap;
+}
+
+/* Grouping */
+.fatex-group {
+    margin: 0 0.1em;
+}
+
+/* Row: inline container for a sequence of atoms */
+.fatex-row {
+    display: inline;
+}
+
+/* Fraction styling */
+.fatex-fraction {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    margin: 0 0.2em;
+}
+.fatex-numerator {
+    display: block;
+    padding: 0 0.1em;
+}
+.fatex-fraction-line {
+    display: block;
+    width: 100%;
+    border-top: 1px solid;
+    margin: 0.1em 0;
+}
+.fatex-denominator {
+    display: block;
+    padding: 0 0.1em;
+}
+
+/* Square root styling */
+.fatex-sqrt {
+    display: inline-block;
+    position: relative;
+    padding-left: 0.3em;
+    margin-right: 0.2em;
+}
+.fatex-radical {
+    font-family: "DejaVu Sans", "Times New Roman", serif;
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1.2em;
+    line-height: 1;
+}
+.fatex-radicand {
+    border-top: 1px solid;
+    padding-left: 0.2em;
+    display: inline-block;
+}
+
+/* Superscript and subscript */
+.fatex-sup {
+    font-size: 0.75em;
+    vertical-align: super;
+    margin-left: 0.05em;
+}
+.fatex-sub {
+    font-size: 0.75em;
+    vertical-align: sub;
+    margin-right: 0.05em;
+}
+.fatex-atom {
+    display: inline-block;
+}
+
+/* Commands (e.g. \sin, \cos) are rendered in upright style */
+.fatex-command {
+    font-family: "Times New Roman", Times, serif;
+    font-style: normal;
+    margin: 0 0.1em;
+}
+
+/* Error styling */
+.fatex-error {
+    color: red;
+    font-weight: bold;
+    border: 1px dashed red;
+    padding: 0 0.2em;
+}

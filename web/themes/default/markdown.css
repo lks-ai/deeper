@@ -119,18 +119,16 @@
 }
 
 /* LaTeX styling */
-.markdown .math-inline {
+.math-inline {
   font-style: italic;
-  color: #003366;
   padding: 0 0.2em;
-  background-color: #7c7c7c24;
+  background-color: rgba(128,128,128,0.3);
 }
 
-.markdown .math-display {
+.math-display {
   text-align: center;
   margin: 1em 0;
-  font-style: italic;
-  color: #003366;
-  background-color: #7c7c7c24;
+  background-color: rgba(128,128,128,0.2);
+  border-radius: 0.3em;
   padding: 0.5em;
 }

@@ -60,6 +60,20 @@
 
   // --- Internal parser implementation ---
 
+  // Helper function to tell if a url is a video
+  function isVideoUrl(url) {
+    const videoExtensions = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm'];
+    const videoHosts = ['youtube.com', 'vimeo.com'];
+
+    // Check if the URL ends with a video extension
+    const extensionMatch = videoExtensions.some(ext => url.endsWith(ext));
+
+    // Check if the URL is hosted on a video host
+    const hostMatch = videoHosts.some(host => url.includes(host));
+
+    return extensionMatch || hostMatch;
+  }
+
   /**
    * parseMarkdown – Convert markdown to HTML.
    *
@@ -85,14 +99,19 @@
       return placeholder;
     });
 
+    function safeFaTeX(math){
+      if (FaTeX) return FaTeX.renderToString(math.trim());
+        else return math.trim();
+    }
+
     // 1. Process LaTeX display math: \[ ... \]
     text = text.replace(/\\\[((?:.|\n)*?)\\\]/g, function(match, math) {
-      return '<div class="math-display">' + math.trim() + '</div>';
+      return '<div class="math-display">' + safeFaTeX(math) + '</div>';
     });
 
     // 2. Process LaTeX inline math: \( ... \)
     text = text.replace(/\\\(((?:.|\n)*?)\\\)/g, function(match, math) {
-      return '<span class="math-inline">' + math.trim() + '</span>';
+      return '<span class="math-inline">' + safeFaTeX(math) + '</span>';
     });
 
     // 3. Headings: Lines starting with one or more '#' characters.
@@ -160,7 +179,11 @@
     // 10. Images: ![alt text](url "optional title")
     text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, function(match, alt, url, title) {
       var titleAttr = title ? ' title="' + title + '"' : '';
-      return '<img src="' + url + '" alt="' + alt + '"' + titleAttr + ' />';
+      let elem = 'img';
+      if (isVideoUrl(url)){
+        elem = 'video';
+      }
+      return '<' + elem + ' src="' + url + '" alt="' + alt + '"' + titleAttr + ' />';
     });
 
     // 11. Bold text: **text** or __text__
@@ -324,9 +347,14 @@
       }
     }
     // Flush remaining contexts.
-    while (stack.length > 0) {
+    if (stack.length > 0) {
+      while (stack.length > 1) {
+        var child = stack.pop();
+        stack[stack.length - 1].items[stack[stack.length - 1].items.length - 1].children.push(child);
+      }
       output.push(renderList(stack.pop()));
     }
+    
     return output.join('\n');
   }
 
