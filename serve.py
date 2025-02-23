@@ -197,6 +197,37 @@ class ConnectionManager:
             if not self.channels[channel]["connections"]:
                 del self.channels[channel]
 
+    def get_users(self, channel: str):
+        if channel in self.channels:
+            if self.channels[channel]['connections']:
+                o = []
+                for uid, user in self.channels[channel]['connections'].items():
+                    o.append({
+                        'id': user.id,
+                        'name': user.name,
+                        'metadata': user.metadata
+                    })
+                return o
+        return None
+    
+    def update_user(self, message: dict, user_id:str):
+        user = self.users.get(user_id, None)
+        if user is not None:
+            user.__dict__.update(message['fields'])
+            
+    async def broadcast_to_user_channels(self, sender: WebSocket, user_id:str, message: dict):
+        # broadcast a message to all channels user is part of (for user updates mainly)
+        user:StreamUser = self.users.get(user_id, None)
+        if user is not None:
+            chans = user.connections.keys()
+            for channel in chans:
+                await self.broadcast(message, sender, channel)
+    
+    async def broadcast_users(self, channel:str):
+        users = self.get_users(channel)
+        if users is not None:
+            await self.broadcast({'users': users}, None, channel)
+
     async def broadcast(self, message: dict, sender: WebSocket, channel: str):
         print('Broadcasting on', channel, message)
         if "action" not in message:
@@ -277,6 +308,14 @@ async def websocket_endpoint(websocket: WebSocket):
             if action == 'join_channel':
                 print(f"JOINING CHANNEL {user_id}, {message['channel']}")
                 await join_channel(user_id, message['channel'])
+            elif action == 'user_update':
+                # this is because it's a user-scope
+                print('listing users!')
+                manager.update_user(message, user_id)
+                await manager.broadcast_to_user_channels(websocket, user_id, message)
+            elif action == 'list_users':
+                users = manager.get_users(channel)
+                await websocket.send_json({'action': 'list_users', 'users': users})
             else:
                 await manager.broadcast(message, sender=websocket, channel=user.channel)
     except WebSocketDisconnect:

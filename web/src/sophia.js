@@ -599,6 +599,21 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("User navigated", msg)
   });
 
+  sophia.sendGetUsers = function(channel){
+    let data = {
+      action: 'list_users',
+      userId: sophia.user.id,
+      channel: channel,
+    }
+    console.log('get users', data);
+    sophia.client.send(data);
+  }
+  sophia.client.on('list_users', (msg) => {
+    console.log("Got Users", msg);
+  });
+
+  // TODO Don't forget to send user update on open, (username, etc.) and get user list after that
+
   sophia.sendSyncRequest = function(){
     let data = {
       action: 'fullsync',
