@@ -126,6 +126,13 @@ function extractHashLinksFromMarkdown(markdownText) {
   return uuids;
 }
 
+function extractTextFromHtml(htmlString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, 'text/html');
+  const textNodes = doc.body.textContent || '';
+  return textNodes;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const sophia = {};
     sophia.dirty = false;
@@ -394,8 +401,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Or use prefix/suffix:
     boldReplacer: function(text){ 
       let node = hierarchyEditor.getCurrentNode();
-      text = trim(text, '":\'').replace("'", "\\'");
-      return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send('${node.id}', '${text}', createChild=true, label='${text}');"><strong>${text}</strong></a>`;
+      let cleanText = trim(extractTextFromHtml(text), '":\'').replace("'", "\\'");
+      //text = trim(text, '":\'').replace("'", "\\'");
+      return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send('${node.id}', '${cleanText}', createChild=true, label='${cleanText}');"><strong>${text}</strong></a>`;
     },
     // boldPrefix: '<a href="#" on>',
     // boldSuffix: '</a>'
