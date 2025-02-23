@@ -224,7 +224,7 @@
         var codeHtml = '<div class="code-block-container">' +
                          titleBar +
                          '<button class="copy-btn" onclick="Markdown.copyCode(this)">Copy</button>' +
-                         '<pre><code>' + escapedCode + '</code></pre>' +
+                         '<pre><code>' + SyntaxHighlighter.highlight(cb.code, cb.lang) + '</code></pre>' +
                        '</div>';
         text = text.replace(placeholder, codeHtml);
       }

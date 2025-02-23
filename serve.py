@@ -245,7 +245,8 @@ class ConnectionManager:
                             # print('sending', connection)
                             await connection.send_json(message)
                     for conn in to_remove:
-                        del user.connections[channel][conn]
+                        # del user.connections[channel][conn]
+                        user.remove_connection(channel, conn)
 
     def create_channel(self, channel: str, metadata: dict = None):
         if channel not in self.channels:

@@ -1,0 +1,32 @@
+/* syntax-highlighter.css */
+.sh-keyword {
+  color: #0000FF; /* Blue for keywords */
+  font-weight: bold;
+}
+
+.sh-string {
+  color: #008000; /* Green for strings */
+}
+
+.sh-comment {
+  color: #808080; /* Gray for comments */
+  font-style: italic;
+}
+
+.sh-number {
+  color: #FF0000; /* Red for numbers */
+}
+
+.sh-operator {
+  color: #AA22FF; /* Purple for operators */
+}
+
+.sh-punctuation {
+  color: #000000; /* Black for punctuation */
+}
+
+.sh-variable {
+  color: #000000; /* Black for variable names */
+}
+
+/* Optionally, add more styling as needed */

@@ -1,0 +1,47 @@
+/* syntax-highlighter-dark.css */
+/* VSCode Dark+ inspired syntax highlighter dark mode */
+pre {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 10px;
+  border: 1px solid #333;
+  overflow: auto;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+/* Keywords: VSCode uses a blue tone */
+.sh-keyword {
+  color: #569CD6;
+  font-weight: bold;
+}
+
+/* Strings: a light, warm orange tone */
+.sh-string {
+  color: #CE9178;
+}
+
+/* Comments: a greenish tone, slightly italicized */
+.sh-comment {
+  color: #6A9955;
+  font-style: italic;
+}
+
+/* Numbers: soft green */
+.sh-number {
+  color: #B5CEA8;
+}
+
+/* Operators: light gray for contrast */
+.sh-operator {
+  color: #D4D4D4;
+}
+
+/* Punctuation: matching operator color */
+.sh-punctuation {
+  color: #D4D4D4;
+}
+
+/* Variables: light blue for identifiers */
+.sh-variable {
+  color: #9CDCFE;
+}
