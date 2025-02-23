@@ -466,8 +466,8 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.logOut = function(){
     localStorage.removeItem('jwt');
     localStorage.removeItem('userId');
-    localStorage.removeItem('image_url');
-    localStorage.removeItem('userName');
+    //localStorage.removeItem('image_url');
+    //localStorage.removeItem('userName');
     window.location.reload();
   }
   
@@ -591,7 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let data = {
       action: 'user_navigate',
       userId: sophia.user.id,
-      nodeId: node
+      nodeId: node.id,
     };
     sophia.client.send(data);
   }

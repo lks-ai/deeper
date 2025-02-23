@@ -206,11 +206,12 @@ class ConnectionManager:
                 if channel in user.connections:
                     to_remove = []
                     for connection in user.connections[channel]:
-                        print(connection.client_state)
+                        # print(connection.client_state)
                         if connection.client_state == WebSocketState.DISCONNECTED:
                             to_remove.append(connection)
                             continue
                         if connection != sender:
+                            # print('sending', connection)
                             await connection.send_json(message)
                     for conn in to_remove:
                         del user.connections[channel][conn]

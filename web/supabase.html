@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Supabase Modular Auth Template</title>
+  <!-- Ensure mobile responsiveness -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In</title>
   <!-- Load the Supabase client from a CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -114,11 +116,20 @@
      * AUTHENTICATION API
      *********************/
     async function emailLogin(email, password) {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email, password,
+        options: {
+          redirectTo: `${window.location.origin}${window.location.pathname}`,
+        }, 
+      });
       if (error) {
         return { success: false, message: error.message };
       }
-      return { success: true, message: 'Logged in successfully!', jwt: data.session?.access_token };
+      let d = { success: true, message: 'Logged in successfully!', jwt: data.session?.access_token };
+      setTimeout(function(){
+        window.location.href = window.location.origin;
+      }, 200);
+      return d;
     }
 
     async function emailSignup(email, password) {
@@ -217,6 +228,13 @@
       document.querySelectorAll('.auth-form').forEach(form => {
         form.classList.remove('active');
       });
+      document.querySelectorAll('.auth-form input').forEach(input => {
+        const idParts = input.id.split('-', 2);
+        input.addEventListener('keydown', function(){
+          const b = document.querySelector(`.auth-form button#${idParts[0]}-button`);
+          b.click();
+        });
+      });
       document.getElementById(formId).classList.add('active');
     }
 
@@ -297,6 +315,7 @@
       } else {
         showResult("You are not logged in.");
       }
+      activateForm('email-login-form');
     });
 
 
