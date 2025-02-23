@@ -22,11 +22,13 @@
     
     class Nav {
         setHash(hash) {
+            if (window.location.hash.includes(hash)) return false;
             if (history.pushState) {
                 history.pushState(null, null, `#${hash}`);
             } else {
                 location.hash = `#${hash}`;
             }
+            return true;
         }
         
         goHash(hash, scroll=true) {
@@ -309,7 +311,8 @@
                 this.renderNodeEditor();
             }
             this.updateConnections();
-            window.nav.setHash(currentNode.id);
+            let hashSet = window.nav.setHash(currentNode.id);
+            if (hashSet) this.triggerHook('navigate', {node: currentNode});
             document.title = `${currentNode.name} - ${this.title}`;
             this.ready = true;
         }

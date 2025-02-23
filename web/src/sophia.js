@@ -273,6 +273,11 @@ document.addEventListener("DOMContentLoaded", () => {
     oneUpEffect(hierarchyEditor.nodeEditor, 'right');
   });
 
+  // Hook for swiping right
+  window.hierarchyEditor.on("navigate", (data) => {
+    sophia.sendUserNavigate(data.node);
+  });
+
   // Thought Section
   window.hierarchyEditor.addModularSection("thoughtSection", (currentNode) => {
     if (!currentNode.metadata.thought) return;
@@ -414,6 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sync (through caching on workspace)
   */
   sophia.user = {name: localStorage.getItem('userName') || 'anon', id: window.nav.getId()};
+  sophia.users = {};
 
   /**
    * Attempts to automatically log in the user based on the JWT stored in localStorage.
@@ -479,7 +485,10 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.client = new SophiaWebSocketClient(`${window.location.protocol == 'https:' ? 'wss': 'ws'}://${window.location.host}/ws`);
   sophia.client.on("open", (e) => {
     console.log("Connected", e);
-    sophia.joinChannel(hierarchyEditor.treeData.id);
+    let chanId = hierarchyEditor.treeData.id;
+    sophia.joinChannel(chanId);
+    sophia.sendUserUpdate({name: sophia.user.name, metadata: sophia.user.metadata});
+    sophia.sendGetUsers(chanId);
   });
 
   sophia.joinChannel = function(channel){
@@ -610,9 +619,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   sophia.client.on('list_users', (msg) => {
     console.log("Got Users", msg);
+    sophia.users = msg.users.reduce((users, item) => {
+      users[item.id] = item;
+      return users;
+    }, {});
   });
 
   // TODO Don't forget to send user update on open, (username, etc.) and get user list after that
+
+  // fix markdown nested lists (last section ends up first!)
+  //  markdown code coloring?
 
   sophia.sendSyncRequest = function(){
     let data = {
