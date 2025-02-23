@@ -245,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Register a hook for when a node is created.
   window.hierarchyEditor.on("nodeCreated", (data) => {
     console.log("New node created:", data.node);
-    sophia.sendCreate(data);
+    sophia.sendCreate(data.node);
   });
 
   // Register a hook for when a node is removed.
@@ -513,7 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Create received", msg);
     let parentNode = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.parentId);
     if (parentNode){
-      let targetNode = hierarchyEditor.createNode(msg.fields.name, parentNode, type=msg.fields.type);
+      let targetNode = hierarchyEditor.createNode(msg.fields.name, parentNode, hierarchyEditor.getNodeType(msg.fields.type));
       targetNode = {...targetNode, ...msg.fields};
       targetNode.id = msg.nodeId;
       parentNode.children.push(targetNode);
@@ -864,7 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
       targetNode.name = "Thinking...";
       sophia.sendUpdate(targetNode, {name: targetNode.name});
     }else{
-      targetNode = hierarchyEditor.createNode("Thinking...", parentNode, type=newNodeType);
+      targetNode = hierarchyEditor.createNode("Thinking...", parentNode, hierarchyEditor.getNodeType(newNodeType), true);
       parentNode.children.push(targetNode);
       // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
       if (label) {

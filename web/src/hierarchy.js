@@ -118,6 +118,7 @@
             this.nodeTypes = {};
             
             // this.render();
+            this.ready = false;
             
             // Update SVG connectors on window resize.
             window.addEventListener("resize", () => this.updateConnections());
@@ -310,6 +311,7 @@
             this.updateConnections();
             window.nav.setHash(currentNode.id);
             document.title = `${currentNode.name} - ${this.title}`;
+            this.ready = true;
         }
 
         renderTop(){
@@ -404,18 +406,12 @@
                     addTypeBtn.style.cursor = "pointer";
                     addTypeBtn.addEventListener("click", () => {
                         let currentParent = this.currentFocusPath[this.currentFocusPath.length - 1];
-                        let newNode = this.createNode("New " + typeData.label, currentParent, type=typeData.name);
+                        let newNode = this.createNode("New " + typeData.label, currentParent, typeData, true);
                         // newNode.type = typeData.name;
                         // Prepopulate metadata from the type schema.
-                        if (Array.isArray(typeData.schema)) {
-                            typeData.schema.forEach(metaDef => {
-                                newNode.metadata[metaDef.name] = metaDef.defaultValue;
-                            });
-                        }
                         currentParent.children.push(newNode);
                         this.currentFocusPath.push(newNode);
                         this.nodeEditorMode = "view";
-                        this.triggerHook("nodeCreated", { node: newNode });
                         this.render();
                         setTimeout(() => {
                             let viewerNameInput = this.nodeEditor.querySelector("input[type='text']");
@@ -935,8 +931,8 @@
         /**** Node creation and destruction ****/
         
         // Create a new node. (Each node now has a "type" and an "image_url" property.)
-        createNode(content = "New Node", parent = null, type = null) {
-            return {
+        createNode(content = "New Node", parent = null, typeData = null, triggerHook = false) {
+            let node = {
                 id: window.nav.getId(), //"node-" + (this.nodeIdCounter++),
                 content: content,   // legacy text content
                 name: content,      // display name (may be markdown formatted)
@@ -944,11 +940,20 @@
                 metadata: {},       // flat JSON object
                 image_url: null,    // optional background image URL
                 media: [],          // optional list of media objects
-                type: type,         // node type identifier (if set)
+                type: typeData ? typeData.name: null,         // node type identifier (if set)
                 config: {},
                 parent: parent,
                 children: [],
             };
+            if (typeData){
+                if (Array.isArray(typeData.schema)) {
+                    typeData.schema.forEach(metaDef => {
+                        node.metadata[metaDef.name] = metaDef.defaultValue;
+                    });
+                }
+            }
+            if (this.ready && triggerHook) this.triggerHook("nodeCreated", { node: node });
+            return node;
         }
         
         removeNodeFromTree(node, parentNode) {

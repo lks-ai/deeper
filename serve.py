@@ -1,16 +1,27 @@
 # Sophia (Deepr.wiki) API server
 # github.com/lks-ai/deeper
 
+# Standard libs
 import json
 from os import listdir
 from os.path import isfile, join
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status, Depends, Header
+
+# FastAPI and middleware
+from fastapi import FastAPI, HTTPException, status, Depends, Header
+from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.websockets import WebSocketState
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.security import OAuth2PasswordBearer
+
+# Typing
 from pydantic import BaseModel
 from typing import Optional, Dict
+
+# Utility functions
 from util import PATH, think, fetch_models, load_defaults
 
-from fastapi.security import OAuth2PasswordBearer
+# Security and user accounts
 import jwt
 from jwt import PyJWTError
 import traceback
@@ -193,11 +204,16 @@ class ConnectionManager:
         if channel in self.channels:
             for uid, user in self.channels[channel]["connections"].items():
                 if channel in user.connections:
+                    to_remove = []
                     for connection in user.connections[channel]:
                         print(connection.client_state)
-                        
+                        if connection.client_state == WebSocketState.DISCONNECTED:
+                            to_remove.append(connection)
+                            continue
                         if connection != sender:
                             await connection.send_json(message)
+                    for conn in to_remove:
+                        del user.connections[channel][conn]
 
     def create_channel(self, channel: str, metadata: dict = None):
         if channel not in self.channels:
@@ -396,11 +412,17 @@ async def serve_login():
     
     return HTMLResponse(content=html)
 
-#### KEEP THIS AT THE END!
+########################################
+#### STATIC MOUNT: KEEP THIS AT THE END!
+########################################
+
+# Add GZipMiddleware for responses larger than 1000 bytes (adjust as needed)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Mount the "web" directory at the root.
 # Endpoints defined above will override these routes.
 app.mount("/", StaticFiles(directory="web", html=True), name="static")
+
 
 
 # For local testing: run `python main.py` or `uvicorn main:app --host 0.0.0.0 --port 8123`
