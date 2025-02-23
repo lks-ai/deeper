@@ -245,6 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Register a hook for when a node is created.
   window.hierarchyEditor.on("nodeCreated", (data) => {
     console.log("New node created:", data.node);
+    sophia.sendCreate(data);
   });
 
   // Register a hook for when a node is removed.
@@ -252,6 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Node removed:", data.node);
     // removes all [label](#uuid) references turning them back to **label**
     // hierarchyEditor.dereference(data.node);
+    sophia.sendDelete(data.node);
     hierarchyEditor.dereference(data.node.id);
   });
 
@@ -407,16 +409,11 @@ document.addEventListener("DOMContentLoaded", () => {
   Sophia client stuff
   */
 
-  // Initialize the websockets client
-  // TODO needs to now send actions from this userId to sophia.client upon
-  //  encoding or rewriting a node
-  //  any time the body is changed
-  //  perhaps make a hierarchyEditor.update function and route everythign through that?
-  //  perhaps not and just send a message immediately
-  //  needs to change the channel to whatever channel that is the root ID of the tree
-  //  user can be given by SSO or just a random user ID
+  /* Needs
+      delete, user_update, user_navigate, get_users
+      sync (through caching on workspace)
+  */
   sophia.user = {name: localStorage.getItem('userName') || 'anon', id: window.nav.getId()};
-  //sophia.
 
   /**
    * Attempts to automatically log in the user based on the JWT stored in localStorage.
@@ -476,14 +473,67 @@ document.addEventListener("DOMContentLoaded", () => {
   
   //
   //  Websocket Client for realtime colab
+  //    functions for sending commands followed by their event hooks on the client
   //
 
-  const wsClient = new SophiaWebSocketClient(`${window.location.protocol == 'https:' ? 'wss': 'ws'}://${window.location.host}/ws`);
-  wsClient.on("open", (e) => {
+  sophia.client = new SophiaWebSocketClient(`${window.location.protocol == 'https:' ? 'wss': 'ws'}://${window.location.host}/ws`);
+  sophia.client.on("open", (e) => {
     console.log("Connected", e);
     sophia.joinChannel(hierarchyEditor.treeData.id);
   });
-  wsClient.on("update", (msg) => {
+
+  sophia.joinChannel = function(channel){
+    const data = {
+      action: 'join_channel',
+      userId: sophia.user.id,
+      channel: channel
+    };
+    console.log("join", data);
+    sophia.client.send(data);
+  }
+  sophia.client.on("user_joined", (msg) => {
+    console.log("User joined", msg)
+  });
+
+  sophia.sendCreate = function(node){
+    let data = {
+      action: 'create',
+      userId: sophia.user.id,
+      nodeId: node.id,
+      parentId: node.parent.id,
+      fields: {
+        name: node.name,
+        type: node.type,
+        metadata: node.metadata
+      }
+    };
+    sophia.client.send(data);
+  }
+  sophia.client.on("create", (msg) => {
+    console.log("Create received", msg);
+    let parentNode = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.parentId);
+    if (parentNode){
+      let targetNode = hierarchyEditor.createNode(msg.fields.name, parentNode, type=msg.fields.type);
+      targetNode = {...targetNode, ...msg.fields};
+      targetNode.id = msg.nodeId;
+      parentNode.children.push(targetNode);
+      sophia.updateLinks(parentNode);
+      hierarchyEditor.renderTop();
+      sophia.updateTreeVisualizer();
+    }
+  });
+
+  sophia.sendUpdate = function(node, fields={}){
+    // fields is a diff of what has changed in the structure of a node
+    let data = {
+      action: 'update',
+      userId: sophia.user.id,
+      nodeId: node.id,
+      fields: fields
+    };
+    sophia.client.send(data);
+  }
+  sophia.client.on("update", (msg) => {
     console.log("Update received", msg);
     // get the node from the ID
     // get the update
@@ -505,67 +555,27 @@ document.addEventListener("DOMContentLoaded", () => {
       sophia.updateTreeVisualizer();
     }
   });
-  wsClient.on("create", (msg) => {
-    console.log("Create received", msg);
-    // get parent id
-    // create child from parent just like in send
-    let parentNode = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.parentId);
-    if (parentNode){
-      let targetNode = hierarchyEditor.createNode(msg.fields.name, parentNode, type=msg.fields.type);
-      targetNode = {...targetNode, ...msg.fields};
-      targetNode.id = msg.nodeId;
-      parentNode.children.push(targetNode);
-      sophia.updateLinks(parentNode);
+
+  sophia.sendDelete = function(node){
+    // fields is a diff of what has changed in the structure of a node
+    let data = {
+      action: 'delete',
+      userId: sophia.user.id,
+      nodeId: node.id,
+    };
+    sophia.client.send(data);
+  }
+  sophia.client.on("delete", (msg) => {
+    console.log("Delete received", msg);
+    let node = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.nodeId);
+    if (node){
+      hierarchyEditor.removeNodeFromTree(node, node.parent);
       hierarchyEditor.renderTop();
       sophia.updateTreeVisualizer();
     }
-
   });
-  wsClient.on("user_joined", (msg) => {
-    console.log("User joined", msg)
-  });
-  wsClient.on("user_update", (msg) => {
-    console.log("User updated their data", msg)
-  });
-  sophia.client = wsClient;
 
-  sophia.joinChannel = function(channel){
-    const data = {
-      action: 'join_channel',
-      userId: sophia.user.id,
-      channel: channel
-    };
-    console.log("join", data);
-    sophia.client.send(data);
-  }
-
-  sophia.sendCreate = function(node){
-    let data = {
-      action: 'create',
-      userId: sophia.user.id,
-      nodeId: node.id,
-      parentId: node.parent.id,
-      fields: {
-        name: node.name,
-        type: node.type,
-        metadata: node.metadata
-      }
-    };
-    sophia.client.send(data);
-  }
-
-  sophia.sendUpdate = function(node, fields={}){
-    // fields is a diff of what has changed in the structure of a node
-    let data = {
-      action: 'update',
-      userId: sophia.user.id,
-      nodeId: node.id,
-      fields: fields
-    };
-    sophia.client.send(data);
-  }
-
-  sophia.updateUser = function(fields={}){
+  sophia.sendUserUpdate = function(fields={}){
     let data = {
       action: 'user_update',
       userId: sophia.user.id,
@@ -573,6 +583,21 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     sophia.client.send(data);
   }
+  sophia.client.on("user_update", (msg) => {
+    console.log("User updated their data", msg)
+  });
+
+  sophia.sendUserNavigate = function(node){
+    let data = {
+      action: 'user_navigate',
+      userId: sophia.user.id,
+      nodeId: node
+    };
+    sophia.client.send(data);
+  }
+  sophia.client.on("user_navigate", (msg) => {
+    console.log("User navigated", msg)
+  });
 
   sophia.sendSyncRequest = function(){
     let data = {
@@ -846,7 +871,7 @@ document.addEventListener("DOMContentLoaded", () => {
         targetNode.metadata.tag = trim(label, ':*#,.-');
         sophia.encodeLink([parentNode], label, targetNode);
       }
-      sophia.sendCreate(targetNode);
+      // sophia.sendCreate(targetNode);
     }
     let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
     
@@ -1024,6 +1049,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let parts = event.newURL.split('#', 2);
     hierarchyEditor.navigateToNodeById(parts[1]);
     hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
+    sophia.sendUserNavigate(hierarchyEditor.findNodeById(parts[1]));
   });
 
   // Make sure they really want to leave
@@ -1067,7 +1093,7 @@ document.addEventListener("DOMContentLoaded", () => {
         function(){
           // onclose function
           localStorage.setItem('userName', sophia.user.name);
-          sophia.updateUser({name: sophia.user.name});
+          sophia.sendUserUpdate({name: sophia.user.name});
         });
       }, `Account: ${sophia.user.name}`);
       hierarchyEditor.render();

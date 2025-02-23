@@ -21,7 +21,11 @@ app = FastAPI()
 TODO
     multimodal /think endpoint
     fix language integration
-    websockets endpoint
+    workspaces for storage and given
+        local file storage provider or supabase/external provider
+        share namespace is now an 8 digit hex
+        share is a token that points to workspace/tree
+    definitely work on the login page!!!!
 """
 
 # Add a CORS middleware with a lenient policy:
@@ -190,6 +194,8 @@ class ConnectionManager:
             for uid, user in self.channels[channel]["connections"].items():
                 if channel in user.connections:
                     for connection in user.connections[channel]:
+                        print(connection.client_state)
+                        
                         if connection != sender:
                             await connection.send_json(message)
 
