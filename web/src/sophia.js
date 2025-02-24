@@ -496,7 +496,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let chanId = hierarchyEditor.treeData.id;
     sophia.joinChannel(chanId);
     sophia.sendUserUpdate({name: sophia.user.name, metadata: sophia.user.metadata});
-    sophia.sendGetUsers(chanId);
+    // sophia.sendGetUsers(chanId);
   });
 
   sophia.joinChannel = function(channel){
@@ -507,7 +507,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     console.log("join", data);
     sophia.client.send(data);
-    sophia.sendGetUsers(channel);
+    // sophia.sendGetUsers(channel);
   }
   sophia.client.on("user_joined", (msg) => {
     console.log("User joined", msg)
@@ -800,6 +800,16 @@ document.addEventListener("DOMContentLoaded", () => {
         o.push('<option>' + v + '</option>');
     }
     return '<select id="prompt-history" onchange="document.getElementById(\'message-input\').value=this.value;">' + o.join("") + '</select>';
+  }
+
+  sophia.compileOthersList = function(){
+    let o = [];
+    for (let userId in sophia.users){
+      if (userId == localStorage.getItem('userId')) continue;
+      let user = sophia.users[userId];
+      o.push(`<li><span>${user.name}</span></li>`);
+    };
+    return `<ul>${o.join("")}</ul>`;
   }
 
   sophia.compileAgentSelect = function(){
@@ -1117,6 +1127,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("User is logged in.");
       // TODO Here we can also do stuff making sure `user` is set to the userId etc.
       hierarchyEditor.addToolbarButton('👤', ()=>{
+        sophia.sendGetUsers(hierarchyEditor.treeData.id);
         showModal(`
           <h2><span id="title-username">${sophia.user.name}</span><br><small>Account Settings</small></h2>
           <ul>
@@ -1127,6 +1138,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <li>
               <label>Session</label>
               <button onclick="sophia.logOut()">Log Out</button>
+            </li>
+            <li>
+              <label>Others</label>
+              ${sophia.compileOthersList()}
             </li>
           </ul>
         `,
