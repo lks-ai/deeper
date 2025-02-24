@@ -507,6 +507,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     console.log("join", data);
     sophia.client.send(data);
+    sophia.sendGetUsers(channel);
   }
   sophia.client.on("user_joined", (msg) => {
     console.log("User joined", msg)

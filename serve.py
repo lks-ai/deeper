@@ -315,7 +315,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 manager.update_user(message, user_id)
                 await manager.broadcast_to_user_channels(websocket, user_id, message)
             elif action == 'list_users':
-                users = manager.get_users(channel)
+                users = manager.get_users(message['channel'])
                 await websocket.send_json({'action': 'list_users', 'users': users})
             else:
                 await manager.broadcast(message, sender=websocket, channel=user.channel)
