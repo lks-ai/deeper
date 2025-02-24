@@ -426,8 +426,22 @@ document.addEventListener("DOMContentLoaded", () => {
       delete, user_update, user_navigate, get_users
       sync (through caching on workspace)
   */
-  sophia.user = {name: localStorage.getItem('userName') || 'anon', id: window.nav.getId()};
+  sophia.user = {
+    id: window.nav.getId(),
+    name: localStorage.getItem('userName') || 'anon',
+    metadata: JSON.parse(localStorage.getItem('metaData')) || {}
+  };
   sophia.users = {};
+
+
+  sophia.getUserImage = function(user, size=null) {
+    let sizePart = size ? ` width: ${size}; height: ${size};`: '';
+    if (user.metadata.imageUrl){
+      return `<span class="user-badge" title="${user.name}" style="background-image: url('${user.metadata.imageUrl}');${sizePart}"></span>`;
+    }else{
+      return `<span class="user-badge" title="${user.name}" style="${sizePart}"><span>${user.name[0]}</span></span>`;
+    }
+  }
 
   /**
    * Attempts to automatically log in the user based on the JWT stored in localStorage.
@@ -451,9 +465,9 @@ document.addEventListener("DOMContentLoaded", () => {
           sophia.user.id = userData.id;
           if (userData.name) sophia.user.name = userData.name;
           localStorage.setItem('userId', userData.id);
-          if (userData.image_url) {
-            localStorage.setItem('image_url', userData.image_url);
-          }
+          // if (userData.image_url) {
+          //   localStorage.setItem('imageUrl', userData.image_url);
+          // }
           if (userData.name) {
             localStorage.setItem('userName', userData.name);
           }
@@ -465,8 +479,8 @@ document.addEventListener("DOMContentLoaded", () => {
           // Clear invalid tokens and user data.
           localStorage.removeItem('jwt');
           localStorage.removeItem('userId');
-          localStorage.removeItem('image_url');
-          localStorage.removeItem('userName');
+          // localStorage.removeItem('image_url');
+          // localStorage.removeItem('userName');
           resolve(false);
         });
     });
@@ -807,9 +821,9 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let userId in sophia.users){
       if (userId == localStorage.getItem('userId')) continue;
       let user = sophia.users[userId];
-      o.push(`<li><span>${user.name}</span></li>`);
+      o.push(`<li class="user-item">${sophia.getUserImage(user, size='2em')}<span>${user.name}</span></li>`);
     };
-    return `<ul>${o.join("")}</ul>`;
+    return `<ul class="user-list">${o.join("")}</ul>`;
   }
 
   sophia.compileAgentSelect = function(){
@@ -1117,7 +1131,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.autoLogin().then((isLoggedIn) => {
     if (isLoggedIn) {
       // For example, update the user badge with the stored image_url.
-      const imageUrl = localStorage.getItem('image_url');
+      const imageUrl = sophia.user.metadata.imageUrl;
       if (imageUrl) {
         const userBadge = document.getElementById('userBadge');
         if (userBadge) {
@@ -1135,13 +1149,17 @@ document.addEventListener("DOMContentLoaded", () => {
               <li>
                 <label>User Name</label>
                 <input type="text" placeholder="username" value="${sophia.user.name}" onchange="sophia.user.name=this.value; document.getElementById('title-username').innerHTML=this.value;" onkeyup="this.onchange()">
+                <div id="userImagePreview" style="margin-top: 0.5em; margin-bottom: 0.5em;">
+                  ${sophia.getUserImage(sophia.user)}
+                </div>
+                <input type="text" placeholder="Enter an image URL starting with http://" value="${sophia.user.metadata.imageUrl || ''}" onchange="sophia.user.metadata.imageUrl=this.value; document.getElementById('userImagePreview').innerHtml=sophia.getUserImage(sophia.user);" onkeyup="this.onchange()">
               </li>
               <li>
                 <label>Session</label>
                 <button onclick="sophia.logOut()">Log Out</button>
               </li>
               <li>
-                <label>Others</label>
+                <label>Others in <em>${hierarchyEditor.treeData.name}</em></label>
                 ${sophia.compileOthersList()}
               </li>
             </ul>
@@ -1149,7 +1167,8 @@ document.addEventListener("DOMContentLoaded", () => {
           function(){
             // onclose function
             localStorage.setItem('userName', sophia.user.name);
-            sophia.sendUserUpdate({name: sophia.user.name});
+            localStorage.setItem('metaData', JSON.stringify(sophia.user.metadata));
+            sophia.sendUserUpdate({name: sophia.user.name, metadata: sophia.user.metadata});
           });
         }, 200);
       }, `Account: ${sophia.user.name}`);

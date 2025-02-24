@@ -85,3 +85,21 @@ code {
     padding: 0.2em;
     border-radius: 0.3em;
 }
+
+.user-badge {
+    background-color: #5946ff;
+    color: #fff;
+    width: 3em;
+    height: 3em;
+    text-align: center;
+    padding: 0.2em;
+    border-radius: 2em;
+}
+
+.user-badge span {
+    font-size: 2em;
+    font-weight: bold;
+    top: 0.2em;
+    position: relative;
+    font-family:'Times New Roman', Times, serif
+}
