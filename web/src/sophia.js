@@ -1128,28 +1128,30 @@ document.addEventListener("DOMContentLoaded", () => {
       // TODO Here we can also do stuff making sure `user` is set to the userId etc.
       hierarchyEditor.addToolbarButton('👤', ()=>{
         sophia.sendGetUsers(hierarchyEditor.treeData.id);
-        showModal(`
-          <h2><span id="title-username">${sophia.user.name}</span><br><small>Account Settings</small></h2>
-          <ul>
-            <li>
-              <label>User Name</label>
-              <input type="text" placeholder="username" value="${sophia.user.name}" onchange="sophia.user.name=this.value; document.getElementById('title-username').innerHTML=this.value;" onkeyup="this.onchange()">
-            </li>
-            <li>
-              <label>Session</label>
-              <button onclick="sophia.logOut()">Log Out</button>
-            </li>
-            <li>
-              <label>Others</label>
-              ${sophia.compileOthersList()}
-            </li>
-          </ul>
-        `,
-        function(){
-          // onclose function
-          localStorage.setItem('userName', sophia.user.name);
-          sophia.sendUserUpdate({name: sophia.user.name});
-        });
+        setTimeout(function(){
+          showModal(`
+            <h2><span id="title-username">${sophia.user.name}</span><br><small>Account Settings</small></h2>
+            <ul>
+              <li>
+                <label>User Name</label>
+                <input type="text" placeholder="username" value="${sophia.user.name}" onchange="sophia.user.name=this.value; document.getElementById('title-username').innerHTML=this.value;" onkeyup="this.onchange()">
+              </li>
+              <li>
+                <label>Session</label>
+                <button onclick="sophia.logOut()">Log Out</button>
+              </li>
+              <li>
+                <label>Others</label>
+                ${sophia.compileOthersList()}
+              </li>
+            </ul>
+          `,
+          function(){
+            // onclose function
+            localStorage.setItem('userName', sophia.user.name);
+            sophia.sendUserUpdate({name: sophia.user.name});
+          });
+        }, 200);
       }, `Account: ${sophia.user.name}`);
       hierarchyEditor.render();
     } else {
