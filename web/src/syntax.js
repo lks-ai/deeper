@@ -47,7 +47,8 @@
     function highlight(code, langName) {
       var lang = languages[langName.toLowerCase()];
       if (!lang) {
-        throw new Error('Language not registered: ' + langName);
+        // throw new Error('Language not registered: ' + langName);
+        return code;
       }
   
       var tokens = [];
