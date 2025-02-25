@@ -27,7 +27,7 @@ import jwt
 from jwt import PyJWTError
 import traceback
 
-from ws import ConnectionManager
+from ws import ConnectionManager, StreamUser
 
 from contextlib import asynccontextmanager
 manager = ConnectionManager()
@@ -142,7 +142,7 @@ async def load_endpoint(name: str):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     user_id = None
-    channel = None
+    channel_join = None
     try:
         await websocket.accept()
         # The first message should be a join_channel action
@@ -151,41 +151,48 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close(code=1008)
             return
         user_id = join_data.get("userId")
-        channel = join_data.get("channel")
-        if not user_id or not channel:
+        channel_join = join_data.get("channel")
+        if not user_id or not channel_join:
             await websocket.close(code=1008)
             return
 
         async def join_channel(user_id, channel):
             await manager.connect(websocket, user_id, channel)
             # Queue a join message to notify others.
+            user:StreamUser = await manager.get_user(user_id)
             await manager.broadcast({
                 "action": "user_joined",
                 "userId": user_id,
-                "channel": channel
+                "channel": channel,
+                "userData": user.data(channel, websocket),
             }, sender=websocket, channel=channel)
 
-        await join_channel(user_id, channel)
+        await join_channel(user_id, channel_join)
         while True:
-            message = await websocket.receive_json()
+            message:dict = await websocket.receive_json()
             if "action" not in message:
                 message["action"] = "unknown"
             action = message["action"]
-
+            channel = message.get("channel")
             if action == "join_channel":
-                # Allow a user to join an additional channel.
-                new_channel = message.get("channel")
-                if new_channel:
-                    await join_channel(user_id, new_channel)
+                # Allow a user to join another channel.
+                if channel:
+                    await join_channel(user_id, channel)
+                    users = manager.get_users(channel, websocket)
+                    await websocket.send_json({'action': 'list_users', 'users': users})
             elif action == "user_update":
                 manager.update_user(message, user_id)
                 await manager.broadcast_to_user_channels(websocket, user_id, message)
             elif action == "list_users":
-                users = manager.get_users(message.get("channel", channel))
+                users = manager.get_users(channel, websocket)
                 await websocket.send_json({'action': 'list_users', 'users': users})
+            elif action == "user_state":
+                user = await manager.get_user(user_id)
+                user.update_connection_state(channel, websocket, message['fields'])
+                await manager.broadcast(message, sender=websocket, channel=channel)
             else:
                 # Default broadcast: send to current channel.
-                await manager.broadcast(message, sender=websocket, channel=None)
+                await manager.broadcast(message, sender=websocket, channel=channel)
     except WebSocketDisconnect:
         user = manager.users.get(user_id)
         if user:
@@ -193,8 +200,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await manager.broadcast({
             "action": "user_left",
             "userId": user_id,
-            "channel": channel
-        }, sender=websocket, channel=channel)
+            "channel": channel_join
+        }, sender=websocket, channel=channel_join)
     except Exception as e:
         print("Error in websocket_endpoint:", e)
         traceback.print_exc()

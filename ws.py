@@ -1,11 +1,8 @@
-# Standard libs
-import asyncio
+# ws.py
 
-# FastAPI and middleware
+import asyncio
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
-
-# Typing
 from typing import Dict
 
 # ---------------------------
@@ -20,18 +17,44 @@ class StreamUser:
         self.metadata = metadata or {}
         # Mapping: channel -> list of WebSocket connections
         self.connections: Dict[str, list[WebSocket]] = {}
+        # Mapping: channel -> dict mapping each connection to its state data.
+        self.connection_states: Dict[str, dict] = {}
+        
+    def data(self, channel:str, websocket:WebSocket):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'metadata': self.metadata,
+            'state': self.get_connection_state(channel, websocket)
+        }
 
-    def add_connection(self, channel: str, websocket: WebSocket):
+    def add_connection(self, channel: str, websocket: WebSocket, state: dict = None):
         if channel not in self.connections:
             self.connections[channel] = []
+            self.connection_states[channel] = {}
         if websocket not in self.connections[channel]:
             self.connections[channel].append(websocket)
+            self.connection_states[channel][websocket] = state or {}
 
     def remove_connection(self, channel: str, websocket: WebSocket):
         if channel in self.connections and websocket in self.connections[channel]:
             self.connections[channel].remove(websocket)
+            if websocket in self.connection_states[channel]:
+                del self.connection_states[channel][websocket]
             if not self.connections[channel]:
                 del self.connections[channel]
+                del self.connection_states[channel]
+
+    def update_connection_state(self, channel: str, websocket: WebSocket, state_update: dict):
+        """Update the state dictionary for a specific connection in a channel."""
+        if channel in self.connection_states and websocket in self.connection_states[channel]:
+            self.connection_states[channel][websocket].update(state_update)
+    
+    def get_connection_state(self, channel: str, websocket: WebSocket) -> dict:
+        """Return the current state for the specified connection."""
+        if channel in self.connection_states:
+            return self.connection_states[channel].get(websocket, {})
+        return {}
 
 class ConnectionManager:
     def __init__(self):
@@ -50,7 +73,7 @@ class ConnectionManager:
             self.users[user_id].channel = channel
         return self.users[user_id]
 
-    async def connect(self, websocket: WebSocket, user_id: str, channel: str):
+    async def connect(self, websocket: WebSocket, user_id: str, channel: str, state: dict = None):
         # Disconnect previous assignment if necessary.
         if websocket in self.websocket_channels:
             old_channel = self.websocket_channels[websocket]
@@ -58,8 +81,8 @@ class ConnectionManager:
         self.websocket_channels[websocket] = channel
 
         user = await self.get_user(user_id, channel=channel)
-        user.add_connection(channel, websocket)
-
+        user.add_connection(channel, websocket, state)
+        
         if channel not in self.channels:
             self.channels[channel] = {"metadata": {}, "connections": {}}
         self.channels[channel]["connections"][user_id] = user
@@ -77,13 +100,17 @@ class ConnectionManager:
             if channel in self.channels and not self.channels[channel]["connections"]:
                 del self.channels[channel]
 
-    def get_users(self, channel: str):
+    def get_users(self, channel: str, websocket:WebSocket):
         if channel in self.channels and self.channels[channel]['connections']:
-            return [{
+            # Optionally include connection state per user for a specific channel.
+            o = [{
                 'id': user.id,
                 'name': user.name,
-                'metadata': user.metadata
+                'metadata': user.metadata,
+                'state': user.get_connection_state(channel, websocket)  # Aggregated state for the channel
             } for user in self.channels[channel]['connections'].values()]
+            print(o)
+            return o
         return []
 
     def update_user(self, message: dict, user_id: str):
@@ -97,17 +124,16 @@ class ConnectionManager:
             for channel in user.connections.keys():
                 await self.broadcast(message, sender, channel)
 
-    async def broadcast_users(self, channel: str):
-        users = self.get_users(channel)
-        if users:
-            await self.broadcast({'users': users, 'action': 'list_users'}, sender=None, channel=channel)
+    # async def broadcast_users(self, channel: str):
+    #     users = self.get_users(channel)
+    #     if users:
+    #         await self.broadcast({'users': users, 'action': 'list_users'}, sender=None, channel=channel)
 
-    async def broadcast(self, message: dict, sender: WebSocket, channel: str=None):
+    async def broadcast(self, message: dict, sender: WebSocket, channel: str = None):
         """
         Instead of sending immediately, put the message into an async queue.
         """
         channel = channel or message.get('channel', None)
-        # print('QUEUE>', sender, channel, message)
         if channel is None:
             return
         await self.broadcast_queue.put({
@@ -125,27 +151,20 @@ class ConnectionManager:
             message = item["message"]
             sender = item["sender"]
             channel = item["channel"]
-            
-            # print('PROCESS>', sender, channel, message)
-            # print('CHANS', self.channels)
 
             if "action" not in message:
                 message["action"] = "unknown"
 
             if channel in self.channels:
-                # print('CHAN EXIST')
                 for uid, user in self.channels[channel]["connections"].items():
-                    # print('TO UID', uid)
                     if channel in user.connections:
                         to_remove = []
-                        # print('CHAN', channel)
                         for connection in user.connections[channel]:
                             if connection.client_state == WebSocketState.DISCONNECTED:
                                 to_remove.append(connection)
                                 continue
                             if connection != sender:
                                 try:
-                                    # print('SEND')
                                     await connection.send_json(message)
                                 except Exception as e:
                                     print("Error sending message:", e)

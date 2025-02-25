@@ -205,18 +205,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }, "Options Menu");
 
   sophia.renderNodeAttachments = (node, pos, ctx) => {
-    if (node.user) {
+    let users = sophia.getUsersAtNode(node);
+    // TODO change this to use users!
+    for (let index in users) {
+      let user = users[index];
       // Draw a small circle as an avatar below the node.
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y + 15, 5, 0, 2 * Math.PI);
-      ctx.fillStyle = node.user.color;
+      ctx.arc(pos.x + (index * 15), pos.y + 15, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgb(0, 255, 0)';
       ctx.fill();
-    }
-    if (node.extraLabel) {
-      ctx.fillStyle = "black";
       ctx.font = "10px sans-serif";
       // Draw the extra label slightly below the node.
-      ctx.fillText(node.extraLabel, pos.x - 10, pos.y + 30);
+      ctx.fillText(user.name, pos.x - 10, pos.y + 30);
     }
   };
 
@@ -446,10 +446,10 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.user = {
     id: window.nav.getId(),
     name: localStorage.getItem('userName') || 'anon',
-    metadata: JSON.parse(localStorage.getItem('metaData')) || {}
+    metadata: JSON.parse(localStorage.getItem('metaData')) || {},
+    state: {},
   };
   sophia.users = {};
-
 
   sophia.getUserImage = function(user, size=null) {
     let sizePart = size ? ` width: ${size}; height: ${size};`: '';
@@ -458,6 +458,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }else{
       return `<span class="user-badge" title="${user.name}" style="${sizePart}"><span>${user.name[0]}</span></span>`;
     }
+  }
+
+  sophia.getUsersAtNode = function(node){
+    // should get all users at node, and return it as an array
+    let o = [];
+    for (let userId in sophia.users){
+      let user = sophia.users[userId];
+      if (user.state){
+        if (user.state.nodeId){
+          if (user.state.nodeId == node.id){
+            o.push(user);
+          }
+        }
+      }
+    }
+    return o;
   }
 
   /**
@@ -534,7 +550,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = {
       action: 'join_channel',
       userId: sophia.user.id,
-      channel: channel
+      channel: channel,
+      userData: sophia.user
     };
     console.log("join", data);
     sophia.client.send(data);
@@ -542,6 +559,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   sophia.client.on("user_joined", (msg) => {
     console.log("User joined", msg)
+    sophia.users[msg.userId] = msg.userData;
+    sophia.users[msg.userId].state['nodeId'] = msg.channel;
   });
 
   sophia.sendCreate = function(node){
@@ -569,7 +588,7 @@ document.addEventListener("DOMContentLoaded", () => {
       parentNode.children.push(targetNode);
       sophia.updateLinks(parentNode);
       hierarchyEditor.renderTop();
-      sophia.updateTreeVisualizer();
+      sophia.updateTreeVisualizer(true);
     }
   });
 
@@ -623,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (node){
       hierarchyEditor.removeNodeFromTree(node, node.parent);
       hierarchyEditor.renderTop();
-      sophia.updateTreeVisualizer();
+      sophia.updateTreeVisualizer(true);
     }
   });
 
@@ -637,19 +656,34 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   sophia.client.on("user_update", (msg) => {
     console.log("User updated their data", msg)
+    let user = sophia.users[msg.userId]
+    let metadata = user.metadata;
+    if (user){
+      sophia.users[msg.userId] = {...user, ...msg.fields};
+      sophia.users[msg.userId].metadata = {...metadata, ...user.metadata};
+    }
   });
 
   sophia.sendUserNavigate = function(node){
     let data = {
-      action: 'user_navigate',
+      action: 'user_state',
       userId: sophia.user.id,
       channel: hierarchyEditor.treeData.id,
-      nodeId: node.id,
+      fields: {
+        nodeId: node.id,
+      }
     };
     sophia.client.send(data);
   }
-  sophia.client.on("user_navigate", (msg) => {
-    console.log("User navigated", msg)
+  sophia.client.on("user_state", (msg) => {
+    console.log("User state change", msg)
+    if (msg.userId in sophia.users){
+      let user = sophia.users[msg.userId];
+      sophia.users[msg.userId].state = {...user.state, ...msg.fields};
+    }else{
+      sophia.sendGetUsers(hierarchyEditor.treeData.id);
+    }
+    sophia.updateTreeVisualizer();
   });
 
   sophia.sendGetUsers = function(channel){
@@ -693,12 +727,14 @@ document.addEventListener("DOMContentLoaded", () => {
     sophia.sendUpdate(node, {name: node.name});
   });
 
-  sophia.updateTreeVisualizer = function(){
+  sophia.updateTreeVisualizer = function(structuralChange=false){
     // Updates the tree visualizer if it is showing on the client
     if (!window.treeVisualizer) return;
     window.treeVisualizer.treeData = hierarchyEditor.treeData;
-    window.treeVisualizer.computeLayout();
-    window.treeVisualizer.rearrange();
+    if (structuralChange){
+      window.treeVisualizer.computeLayout();
+      window.treeVisualizer.rearrange();
+    }
     window.treeVisualizer.render();
   }
 
@@ -1135,7 +1171,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let parts = event.newURL.split('#', 2);
     hierarchyEditor.navigateToNodeById(parts[1]);
     hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
-    sophia.sendUserNavigate(hierarchyEditor.findNodeById(parts[1]));
+    sophia.sendUserNavigate(hierarchyEditor.findNodeById(hierarchyEditor.treeData, parts[1]));
   });
 
   // Make sure they really want to leave
