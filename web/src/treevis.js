@@ -42,6 +42,7 @@ class TreeVisualizer {
           font: "12px sans-serif",
         },
         drawLinkGraph: false,
+        renderNodeAttachments: null,
         animateTime: 500,
         // Optionally supply an array of nodes that represent the current path.
         currentPath: [],
@@ -510,7 +511,17 @@ class TreeVisualizer {
       ? this.options.highlightColor
       : fillColor;
     ctx.fill();
+    // Call the attachment callback if provided.
+    if (typeof this.options.renderNodeAttachments === "function") {
+      this.options.renderNodeAttachments(node, pos, ctx);
+    }
   }
+
+  getNodeScreenPosition(node) {
+    let info = this.nodeInfo.get(node);
+    if (!info || !info.position) return null;
+    return this.sceneToScreen(info.position.x, info.position.y);
+  }  
 
   /**
    * Draws labels for the given node or array of nodes in screen space.

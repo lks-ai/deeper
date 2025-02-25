@@ -204,6 +204,22 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
   }, "Options Menu");
 
+  sophia.renderNodeAttachments = (node, pos, ctx) => {
+    if (node.user) {
+      // Draw a small circle as an avatar below the node.
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y + 15, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = node.user.color;
+      ctx.fill();
+    }
+    if (node.extraLabel) {
+      ctx.fillStyle = "black";
+      ctx.font = "10px sans-serif";
+      // Draw the extra label slightly below the node.
+      ctx.fillText(node.extraLabel, pos.x - 10, pos.y + 30);
+    }
+  };
+
   window.hierarchyEditor.addToolbarButton("🌳", (currentNode) => {
     setTimeout(function(){
       const canvas = document.getElementById('treeView');
@@ -230,6 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
           font: "12px sans-serif",
         },
         drawLinkGraph: true,
+        renderNodeAttachments: sophia.renderNodeAttachments,
         callbacks: {
           click: (node) => {
             hierarchyEditor.navigateToNodeById(node.id);

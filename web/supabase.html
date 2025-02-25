@@ -4,106 +4,180 @@
   <meta charset="UTF-8" />
   <!-- Ensure mobile responsiveness -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In</title>
+  <title>Modern Dark Supabase Auth</title>
   <!-- Load the Supabase client from a CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-    header {
+    /* Dark Mode Base */
+    body {
+      font-family: 'Helvetica Neue', sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    /* Card Container */
+    .auth-container {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 400px;
+    }
+    /* Tab Header */
+    .tab-header {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #333;
+    }
+    .tab-header button {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 16px;
+      color: #e0e0e0;
+      transition: border-color 0.3s;
+    }
+    .tab-header button.active {
+      border-color: #bb86fc;
+      font-weight: bold;
+    }
+    /* Form Sections */
+    .form-section {
+      display: none;
+    }
+    .form-section.active {
+      display: block;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: #2c2c2c;
+      color: #e0e0e0;
+      box-sizing: border-box;
+    }
+    .auth-button {
+      width: 100%;
+      padding: 10px;
+      background-color: #bb86fc;
+      color: #121212;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    /* OAuth Buttons */
+    .oauth-container {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #ccc;
-      margin-bottom: 20px;
+      margin-top: 15px;
     }
-    #userBadge {
+    .oauth-button {
       display: flex;
       align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: #2c2c2c;
+      cursor: pointer;
+      margin: 0 5px;
+      transition: background 0.3s, border-color 0.3s;
+      color: #e0e0e0;
     }
-    #userBadge img {
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      margin-right: 10px;
+    .oauth-button:hover {
+      background: #383838;
+      border-color: #666;
     }
-    .tabs { text-align: center; margin-bottom: 20px; }
-    .tabs button { margin: 0 5px; padding: 10px 15px; }
-    .auth-form { display: none; border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
-    .auth-form.active { display: block; }
-    .form-group { margin-bottom: 10px; }
-    label { display: block; margin-bottom: 5px; }
-    input { width: 100%; padding: 8px; box-sizing: border-box;}
-    .oauth-buttons { text-align: center; }
-    .oauth-buttons button { margin: 5px; padding: 10px 15px; }
-    #result { margin-top: 20px; text-align: center; }
+    .oauth-button img {
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+    }
+    /* Result Message */
+    #result {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
   </style>
+  <!-- External dark theme overrides, if any -->
   <link id="styleHierarchy" rel="stylesheet" href="themes/dark/hierarchy.css">
   <link id="styleSophia" rel="stylesheet" href="themes/dark/sophia.css">
-
 </head>
 <body>
-  <!-- Header with a user badge -->
-  <header>
-    <h1>Supabase Auth Template</h1>
-    <div id="userBadge">
-      <img src="https://via.placeholder.com/40" alt="User Avatar" id="userAvatar" />
-      <span id="userName">Guest</span>
-      <button id="logoutButton" style="display: none; margin-left:10px;">Logout</button>
+  <div class="auth-container">
+    <!-- Tab Header for Sign In / Sign Up -->
+    <div class="tab-header">
+      <button id="tab-signin" class="active" data-target="signin-form">Sign In</button>
+      <button id="tab-signup" data-target="signup-form">Sign Up</button>
     </div>
-  </header>
-
-  <div class="tabs">
-    <button data-target="email-login-form">Email Login</button>
-    <button data-target="email-signup-form">Email Signup</button>
-    <button data-target="oauth-form">OAuth Login</button>
-  </div>
-
-  <div id="auth-forms">
-    <!-- Email Login Form -->
-    <div id="email-login-form" class="auth-form active">
-      <h2>Email Login</h2>
+    
+    <!-- Sign In Form -->
+    <div id="signin-form" class="form-section active">
       <div class="form-group">
-        <label for="login-email">Email:</label>
-        <input type="email" id="login-email" placeholder="you@example.com" required>
+        <label for="signin-email">Email</label>
+        <input type="email" id="signin-email" placeholder="you@example.com" required>
       </div>
       <div class="form-group">
-        <label for="login-password">Password:</label>
-        <input type="password" id="login-password" placeholder="Enter your password" required>
+        <label for="signin-password">Password</label>
+        <input type="password" id="signin-password" placeholder="Your password" required>
       </div>
-      <button id="login-button">Login</button>
+      <button id="signin-button" class="auth-button">Sign In</button>
     </div>
-
-    <!-- Email Signup Form -->
-    <div id="email-signup-form" class="auth-form">
-      <h2>Email Signup</h2>
+    
+    <!-- Sign Up Form -->
+    <div id="signup-form" class="form-section">
       <div class="form-group">
-        <label for="signup-email">Email:</label>
+        <label for="signup-email">Email</label>
         <input type="email" id="signup-email" placeholder="you@example.com" required>
       </div>
       <div class="form-group">
-        <label for="signup-password">Password:</label>
+        <label for="signup-password">Password</label>
         <input type="password" id="signup-password" placeholder="Create a password" required>
       </div>
-      <button id="signup-button">Sign Up</button>
+      <button id="signup-button" class="auth-button">Sign Up</button>
     </div>
-
-    <!-- OAuth Login Form -->
-    <div id="oauth-form" class="auth-form">
-      <h2>OAuth Login</h2>
-      <div class="oauth-buttons">
-        <button data-provider="google" class="oauth-button">Login with Google</button>
-        <button data-provider="discord" class="oauth-button">Login with Discord</button>
-      </div>
+    
+    <!-- OAuth Section -->
+    <div class="oauth-container">
+      <button data-provider="google" class="oauth-button">
+        <img src="https://cdn.simpleicons.org/google/ffffff">
+        <span>Google</span>
+      </button>
+      <button data-provider="discord" class="oauth-button">
+        <img src="https://cdn.simpleicons.org/discord/ffffff">
+        <span>Discord</span>
+      </button>      
     </div>
+    
+    <div id="result"></div>
   </div>
-
-  <div id="result"></div>
 
   <!-- AuthManager Module: verifies the JWT via /auth -->
   <script src="src/auth.js"></script>
-
-  <!-- Main App Script -->
+  
   <script>
     /***************
      * SUPABASE SETUP
@@ -117,61 +191,32 @@
      *********************/
     async function emailLogin(email, password) {
       const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email, password,
-        options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
-        }, 
+        email,
+        password,
+        options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
       });
-      if (error) {
-        return { success: false, message: error.message };
-      }
-      let d = { success: true, message: 'Logged in successfully!', jwt: data.session?.access_token };
-      setTimeout(function(){
-        window.location.href = window.location.origin;
-      }, 200);
-      return d;
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: 'Logged in successfully!', jwt: data.session?.access_token };
     }
 
     async function emailSignup(email, password) {
       const { data, error } = await supabaseClient.auth.signUp({ email, password });
-      if (error) {
-        return { success: false, message: error.message };
-      }
+      if (error) return { success: false, message: error.message };
       return { success: true, message: 'Signup successful! Please check your email for confirmation.' };
     }
 
     async function oauthLogin(provider) {
-      const { error } = await supabaseClient.auth.signInWithOAuth({ 
+      const { error } = await supabaseClient.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
-        },
+        options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
       });
-      if (error) {
-        return { success: false, message: error.message };
-      }
+      if (error) return { success: false, message: error.message };
       return { success: true, message: 'OAuth flow initiated. Check the popup or redirect.' };
-    }
-
-    async function logout() {
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) {
-        showResult("Logout failed: " + error.message, true);
-      } else {
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('image_url');
-        localStorage.removeItem('userName');
-        updateUserBadge(null);
-        showResult("Logged out successfully!");
-      }
     }
 
     /*********************
      * AUTO-LOGIN & UI UPDATE
      *********************/
-    // autoLogin checks for a JWT in localStorage, verifies it via AuthManager.verify,
-    // updates localStorage with server-verified data, and updates the UI accordingly.
     async function autoLogin() {
       const jwt = localStorage.getItem('jwt');
       if (!jwt) {
@@ -181,12 +226,8 @@
       try {
         const userData = await AuthManager.verify(jwt, true);
         localStorage.setItem('userId', userData.id);
-        if (userData.image_url) {
-          localStorage.setItem('image_url', userData.image_url);
-        }
-        if (userData.name) {
-          localStorage.setItem('userName', userData.name);
-        }
+        if (userData.image_url) localStorage.setItem('image_url', userData.image_url);
+        if (userData.name) localStorage.setItem('userName', userData.name);
         updateUserBadge({
           image_url: userData.image_url || "https://via.placeholder.com/40",
           userName: userData.name || "User"
@@ -205,51 +246,35 @@
     }
 
     function updateUserBadge(user) {
-      const userAvatar = document.getElementById('userAvatar');
-      const userNameElem = document.getElementById('userName');
-      const logoutButton = document.getElementById('logoutButton');
-      if (user) {
-        userAvatar.src = user.image_url;
-        userNameElem.textContent = user.userName;
-        logoutButton.style.display = 'inline-block';
-      } else {
-        userAvatar.src = "https://via.placeholder.com/40";
-        userNameElem.textContent = "Guest";
-        logoutButton.style.display = 'none';
-      }
+      // Optional: update header badge if your layout includes one.
+      // In this template the badge is not displayed, but you can extend this.
     }
 
     function showResult(message, isError = false) {
       const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `<p style="color:${isError ? 'red' : 'green'}">${message}</p>`;
-    }
-
-    function activateForm(formId) {
-      document.querySelectorAll('.auth-form').forEach(form => {
-        form.classList.remove('active');
-      });
-      document.querySelectorAll('.auth-form input').forEach(input => {
-        const idParts = input.id.split('-', 2);
-        input.addEventListener('keydown', function(){
-          const b = document.querySelector(`.auth-form button#${idParts[0]}-button`);
-          b.click();
-        });
-      });
-      document.getElementById(formId).classList.add('active');
+      resultDiv.style.color = isError ? '#cf6679' : '#bb86fc';
+      resultDiv.textContent = message;
     }
 
     /*********************
-     * EVENT LISTENERS
+     * TAB & FORM HANDLING
      *********************/
-    document.querySelectorAll('.tabs button').forEach(button => {
+    document.querySelectorAll('.tab-header button').forEach(button => {
       button.addEventListener('click', () => {
-        activateForm(button.getAttribute('data-target'));
+        document.querySelectorAll('.tab-header button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        const target = button.getAttribute('data-target');
+        document.querySelectorAll('.form-section').forEach(section => section.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
       });
     });
 
-    document.getElementById('login-button').addEventListener('click', async () => {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
+    /*********************
+     * EVENT LISTENERS FOR EMAIL AUTH
+     *********************/
+    document.getElementById('signin-button').addEventListener('click', async () => {
+      const email = document.getElementById('signin-email').value.trim();
+      const password = document.getElementById('signin-password').value;
       if (!email || !password) {
         showResult('Please enter both email and password.', true);
         return;
@@ -257,13 +282,9 @@
       const result = await emailLogin(email, password);
       showResult(result.message, !result.success);
       if (result.success && result.jwt) {
-        // Store the JWT and then verify via AuthManager.
         localStorage.setItem('jwt', result.jwt);
-        setTimeout(async () => {
-          if (await autoLogin()) {
-            showResult("Auto login successful!");
-          }
-        }, 500);
+        // Redirect after a short delay to allow autoLogin to kick in.
+        setTimeout(() => window.location.href = window.location.origin, 500);
       }
     });
 
@@ -278,6 +299,9 @@
       showResult(result.message, !result.success);
     });
 
+    /*********************
+     * EVENT LISTENERS FOR OAUTH
+     *********************/
     document.querySelectorAll('.oauth-button').forEach(button => {
       button.addEventListener('click', async (e) => {
         const provider = e.currentTarget.getAttribute('data-provider');
@@ -286,39 +310,28 @@
       });
     });
 
-    document.getElementById('logoutButton').addEventListener('click', logout);
-
-    // On page load, try auto-login by verifying the JWT via AuthManager.
-    // document.addEventListener('DOMContentLoaded', async function() {
-    //   if (await autoLogin()) {
-    //     showResult("Welcome back!");
-    //   } else {
-    //     showResult("You are not logged in.");
-    //   }
-    // });
-
-    // On page load, check if the URL contains an access token in the hash (from OAuth redirect)
+    /*********************
+     * HANDLE HASH-BASED OAUTH REDIRECT
+     *********************/
     document.addEventListener('DOMContentLoaded', async function() {
+      // Check if URL hash contains access token (from OAuth redirect)
       const hash = window.location.hash;
       if (hash && hash.includes("access_token=")) {
         const params = new URLSearchParams(hash.substring(1));
         const accessToken = params.get("access_token");
         if (accessToken) {
-          // Save the token in localStorage and clear the hash
           localStorage.setItem('jwt', accessToken);
           history.replaceState(null, "", window.location.pathname);
         }
       }
+      // If autoLogin verifies the JWT, redirect to root.
       if (await autoLogin()) {
         showResult("Welcome back!");
         window.location.href = window.location.origin;
       } else {
         showResult("You are not logged in.");
       }
-      activateForm('email-login-form');
     });
-
-
   </script>
 </body>
 </html>
