@@ -51,7 +51,7 @@ Create a `.env` file in the project root to configure your API endpoints and key
 PROWL_VLLM_ENDPOINT=https://openrouter.ai/api
 PROWL_MODEL=qwen/qwen-2.5-7b-instruct
 # For hosted services that require an API key:
-PROWL_VENDOR_API_KEY=YOUR_API_KEY_HERE
+PROWL_VENDOR_API_KEY=sk...
 
 ## AUTH
 
@@ -90,7 +90,7 @@ After installing, start the server by running:
 python serve.py
 ```
 
-Then open your browser and navigate to [http://localhost:8123](http://localhost:8123).
+Then open your browser and navigate to [http://0.0.0.0:8123](http://0.0.0.0:8123).
 
 ---
 
@@ -137,7 +137,7 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - Agent *Workers*: agents for each node can further think and refine their content based on changing context
 - Audio input, Document input: with the ability to chunk/summarize and then organize that into a tree
 - Auto-Propagation and Auto-Growth: respectively having it modify a message through a branch to the leaves or having it self-reply (either naively or using an LLM task)
-- Showing who else is in the tree ()
+- Showing who else is in the tree
 
 ### Server-Side Enhancements
 - Web search capability.

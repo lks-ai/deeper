@@ -531,6 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let data = {
       action: 'create',
       userId: sophia.user.id,
+      channel: hierarchyEditor.treeData.id,
       nodeId: node.id,
       parentId: node.parent.id,
       fields: {
@@ -560,6 +561,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let data = {
       action: 'update',
       userId: sophia.user.id,
+      channel: hierarchyEditor.treeData.id,
       nodeId: node.id,
       fields: fields
     };
@@ -593,6 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let data = {
       action: 'delete',
       userId: sophia.user.id,
+      channel: hierarchyEditor.treeData.id,
       nodeId: node.id,
     };
     sophia.client.send(data);
@@ -623,6 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let data = {
       action: 'user_navigate',
       userId: sophia.user.id,
+      channel: hierarchyEditor.treeData.id,
       nodeId: node.id,
     };
     sophia.client.send(data);
@@ -657,6 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let data = {
       action: 'fullsync',
       userId: sophia.user.id,
+      channel: hierarchyEditor.treeData.id,
     };
     sophia.client.send(data);
   }

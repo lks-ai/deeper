@@ -3,6 +3,7 @@
 
 # Standard libs
 import json
+import asyncio
 from os import listdir
 from os.path import isfile, join
 
@@ -26,7 +27,27 @@ import jwt
 from jwt import PyJWTError
 import traceback
 
-app = FastAPI()
+from ws import ConnectionManager
+
+from contextlib import asynccontextmanager
+manager = ConnectionManager()
+
+# Assume 'manager' is already defined and contains process_queue.
+@asynccontextmanager
+async def lifespan(app):
+    # Startup: start the background task for processing the broadcast queue.
+    task = asyncio.create_task(manager.process_queue())
+    try:
+        yield  # Application is now running.
+    finally:
+        # Shutdown: cancel the background task.
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+app = FastAPI(lifespan=lifespan)
 
 """
 TODO
@@ -115,222 +136,70 @@ async def load_endpoint(name: str):
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Websockets endpoint
     
-from fastapi.staticfiles import StaticFiles
-
-
-##########################################
-# WebSocket support for live collaboration
-##########################################
-
-class StreamUser:
-    def __init__(self, user_id: str, channel: str = None, name: str = 'anon', metadata: dict = None):
-        self.id = user_id
-        self.name = name
-        self.channel = channel  # the user's current channel
-        self.metadata = metadata or {}
-        # Mapping from channel to a list of WebSocket connections.
-        self.connections: dict[str, list[WebSocket]] = {}
-
-    def add_connection(self, channel: str, websocket: WebSocket):
-        if channel not in self.connections:
-            self.connections[channel] = []
-        if websocket not in self.connections[channel]:
-            self.connections[channel].append(websocket)
-
-    def remove_connection(self, channel: str, websocket: WebSocket):
-        if channel in self.connections:
-            if websocket in self.connections[channel]:
-                self.connections[channel].remove(websocket)
-            if not self.connections[channel]:
-                del self.connections[channel]
-
-    def has_connection(self, channel: str, websocket: WebSocket):
-        return channel in self.connections and websocket in self.connections[channel]
-
-
-class ConnectionManager:
-    def __init__(self):
-        # Channels: mapping channel name -> {"metadata": dict, "connections": {user_id: StreamUser}}
-        self.channels: dict[str, dict] = {}
-        self.users: dict[str, StreamUser] = {}
-        # Map each websocket to the channel it’s currently in.
-        self.websocket_channels: dict[WebSocket, str] = {}
-
-    def get_user(self, user_id: str, channel: str = None, name: str = 'anon'):
-        if user_id not in self.users:
-            self.users[user_id] = StreamUser(user_id, channel=channel, metadata={})
-        if channel is not None:
-            self.users[user_id].channel = channel
-        return self.users[user_id]
-
-    async def connect(self, websocket: WebSocket, user_id: str, channel: str):
-        print('connecting')
-        # If this websocket is already assigned to a channel, disconnect it first.
-        if websocket in self.websocket_channels:
-            old_channel = self.websocket_channels[websocket]
-            self.disconnect(websocket, user_id, old_channel)
-        # Record the new channel for this websocket.
-        self.websocket_channels[websocket] = channel
-
-        user = self.get_user(user_id, channel=channel)
-        print('adding', user.__dict__)
-        user.add_connection(channel, websocket)
-        print("User:", user.__dict__)
-
-        if channel not in self.channels:
-            self.channels[channel] = {"metadata": {}, "connections": {}}
-        # Add or update the user's entry for this channel.
-        self.channels[channel]["connections"][user_id] = user
-
-    def disconnect(self, websocket: WebSocket, user_id: str, channel: str):
-        if channel in self.channels:
-            if user_id in self.channels[channel]['connections']:
-                user = self.get_user(user_id)
-                user.remove_connection(channel, websocket)
-                if not user.connections.get(channel):
-                    self.channels[channel]["connections"].pop(user_id, None)
-            # Remove the websocket from our mapping.
-            if websocket in self.websocket_channels:
-                del self.websocket_channels[websocket]
-            # Optionally, delete the channel if it has no connections.
-            if not self.channels[channel]["connections"]:
-                del self.channels[channel]
-
-    def get_users(self, channel: str):
-        if channel in self.channels:
-            if self.channels[channel]['connections']:
-                o = []
-                for uid, user in self.channels[channel]['connections'].items():
-                    o.append({
-                        'id': user.id,
-                        'name': user.name,
-                        'metadata': user.metadata
-                    })
-                return o
-        return None
-    
-    def update_user(self, message: dict, user_id:str):
-        user = self.users.get(user_id, None)
-        if user is not None:
-            user.__dict__.update(message['fields'])
-            
-    async def broadcast_to_user_channels(self, sender: WebSocket, user_id:str, message: dict):
-        # broadcast a message to all channels user is part of (for user updates mainly)
-        user:StreamUser = self.users.get(user_id, None)
-        if user is not None:
-            chans = user.connections.keys()
-            for channel in chans:
-                await self.broadcast(message, sender, channel)
-    
-    async def broadcast_users(self, channel:str):
-        users = self.get_users(channel)
-        if users is not None:
-            await self.broadcast({'users': users}, None, channel)
-
-    async def broadcast(self, message: dict, sender: WebSocket, channel: str):
-        print('Broadcasting on', channel, message)
-        if "action" not in message:
-            message["action"] = "unknown"
-        if channel in self.channels:
-            for uid, user in self.channels[channel]["connections"].items():
-                if channel in user.connections:
-                    to_remove = []
-                    for connection in user.connections[channel]:
-                        # print(connection.client_state)
-                        if connection.client_state == WebSocketState.DISCONNECTED:
-                            to_remove.append(connection)
-                            continue
-                        if connection != sender:
-                            # print('sending', connection)
-                            await connection.send_json(message)
-                    for conn in to_remove:
-                        # del user.connections[channel][conn]
-                        user.remove_connection(channel, conn)
-
-    def create_channel(self, channel: str, metadata: dict = None):
-        if channel not in self.channels:
-            self.channels[channel] = {"metadata": metadata or {}, "connections": {}}
-        else:
-            raise Exception("Channel already exists")
-
-    def update_channel(self, channel: str, metadata: dict):
-        if channel in self.channels:
-            self.channels[channel]["metadata"] = metadata
-        else:
-            raise Exception("Channel does not exist")
-
-    def delete_channel(self, channel: str):
-        if channel in self.channels:
-            del self.channels[channel]
-
-    def get_channel(self, channel: str):
-        return self.channels.get(channel)
-
-    def list_channels(self):
-        return list(self.channels.keys())
-
-manager = ConnectionManager()
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     user_id = None
     channel = None
     try:
         await websocket.accept()
-        # Expect the first message to be a "join_channel" action with userId and channel.
-        join_data:dict = await websocket.receive_json()
-        print(join_data)
+        # The first message should be a join_channel action
+        join_data: dict = await websocket.receive_json()
         if join_data.get("action") != "join_channel":
             await websocket.close(code=1008)
             return
         user_id = join_data.get("userId")
         channel = join_data.get("channel")
+        if not user_id or not channel:
+            await websocket.close(code=1008)
+            return
 
         async def join_channel(user_id, channel):
-            if not user_id or not channel:
-                await websocket.close(code=1008)
-                return
             await manager.connect(websocket, user_id, channel)
-            # Optionally, broadcast a join message.
-            await manager.broadcast({"action": "user_joined", "userId": user_id, "channel": channel},
-                                    sender=websocket, channel=channel)
+            # Queue a join message to notify others.
+            await manager.broadcast({
+                "action": "user_joined",
+                "userId": user_id,
+                "channel": channel
+            }, sender=websocket, channel=channel)
 
         await join_channel(user_id, channel)
-        user = manager.get_user(user_id)
         while True:
             message = await websocket.receive_json()
-            # Ensure each message has an "action" key.
-            print(message)
             if "action" not in message:
                 message["action"] = "unknown"
-            # You can add logic here to handle specific actions (update, delete, etc.)
-            action = message['action']
-            if action == 'join_channel':
-                print(f"JOINING CHANNEL {user_id}, {message['channel']}")
-                await join_channel(user_id, message['channel'])
-            elif action == 'user_update':
-                # this is because it's a user-scope
-                print('listing users!')
+            action = message["action"]
+
+            if action == "join_channel":
+                # Allow a user to join an additional channel.
+                new_channel = message.get("channel")
+                if new_channel:
+                    await join_channel(user_id, new_channel)
+            elif action == "user_update":
                 manager.update_user(message, user_id)
                 await manager.broadcast_to_user_channels(websocket, user_id, message)
-            elif action == 'list_users':
-                users = manager.get_users(message['channel'])
+            elif action == "list_users":
+                users = manager.get_users(message.get("channel", channel))
                 await websocket.send_json({'action': 'list_users', 'users': users})
             else:
-                await manager.broadcast(message, sender=websocket, channel=user.channel)
+                # Default broadcast: send to current channel.
+                await manager.broadcast(message, sender=websocket, channel=None)
     except WebSocketDisconnect:
-        user:StreamUser = manager.get_user(user_id)
-        manager.disconnect(websocket, user_id, user.channel)
-        user.remove_connection(channel, websocket)
-        # Optionally, broadcast a disconnect message.
-        await manager.broadcast({"action": "user_left", "userId": user_id, "channel": channel},
-                                sender=websocket, channel=channel)
+        user = manager.users.get(user_id)
+        if user:
+            manager.disconnect(websocket, user_id, user.channel)
+        await manager.broadcast({
+            "action": "user_left",
+            "userId": user_id,
+            "channel": channel
+        }, sender=websocket, channel=channel)
     except Exception as e:
         print("Error in websocket_endpoint:", e)
         traceback.print_exc()
         await websocket.close(code=1011)
-
+        
 # AUTH FUNCTIONALITY
 # - auth service provider
 # - auth storage provider
@@ -456,6 +325,7 @@ async def serve_login():
 ########################################
 #### STATIC MOUNT: KEEP THIS AT THE END!
 ########################################
+from fastapi.staticfiles import StaticFiles
 
 # Add GZipMiddleware for responses larger than 1000 bytes (adjust as needed)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -463,7 +333,6 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Mount the "web" directory at the root.
 # Endpoints defined above will override these routes.
 app.mount("/", StaticFiles(directory="web", html=True), name="static")
-
 
 
 # For local testing: run `python main.py` or `uvicorn main:app --host 0.0.0.0 --port 8123`
