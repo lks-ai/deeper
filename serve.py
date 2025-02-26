@@ -138,6 +138,7 @@ async def load_endpoint(name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Websockets endpoint
+import yaml
     
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -156,18 +157,24 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close(code=1008)
             return
 
-        async def join_channel(user_id, channel):
+        async def join_channel(user_id, channel, config=None):
             await manager.connect(websocket, user_id, channel)
             # Queue a join message to notify others.
             user:StreamUser = await manager.get_user(user_id)
-            await manager.broadcast({
+            d = {
                 "action": "user_joined",
                 "userId": user_id,
                 "channel": channel,
                 "userData": user.data(channel, websocket),
-            }, sender=websocket, channel=channel)
+            }
+            await manager.broadcast(d, sender=websocket, channel=channel)
+            if config is not None:
+                await websocket.send_json({'action': 'init', 'config': config})
 
-        await join_channel(user_id, channel_join)
+        with open('defaults.yaml', 'r') as f:
+            full_config = yaml.safe_load(f)
+        app_config = full_config['app_config']
+        await join_channel(user_id, channel_join, config=app_config)
         while True:
             message:dict = await websocket.receive_json()
             if "action" not in message:

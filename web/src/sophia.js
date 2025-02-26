@@ -545,6 +545,14 @@ document.addEventListener("DOMContentLoaded", () => {
     sophia.sendUserUpdate({name: sophia.user.name, metadata: sophia.user.metadata});
     // sophia.sendGetUsers(chanId);
   });
+  sophia.client.on('init', (e) => {
+    // console.log('Init', e);
+    if ("config" in e){
+      if ("google_tracking_id" in e.config){
+        loadGoogleAnalytics(e.config.google_tracking_id, { send_page_view: true });
+      }
+    }
+  });
 
   sophia.joinChannel = function(channel){
     const data = {
@@ -1001,7 +1009,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let acfg = sophia.getAgentConfig(); // get once
     if (acfg){
       targetNode.config = acfg;
-      data.agent = config.agent;
+      data.agent = acfg.agent;
       sophia.sendUpdate(targetNode, {config: targetNode.config});
     }
 
