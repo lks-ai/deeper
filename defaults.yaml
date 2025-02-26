@@ -34,3 +34,4 @@ agents:
 app_config:
   auth: supabase # can be supabase, local, none
   storage: local # can be supabase, local, none
+  google_tracking_id: GTM-5898ZJMX

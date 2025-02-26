@@ -548,8 +548,9 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.client.on('init', (e) => {
     // console.log('Init', e);
     if ("config" in e){
+      sophia.app_config = e.config
       if ("google_tracking_id" in e.config){
-        loadGoogleAnalytics(e.config.google_tracking_id, { send_page_view: true });
+        setupGoogleTagManager(e.config.google_tracking_id);
       }
     }
   });
