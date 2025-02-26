@@ -549,9 +549,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // console.log('Init', e);
     if ("config" in e){
       sophia.app_config = e.config
-      if ("google_tracking_id" in e.config){
-        setupGoogleTagManager(e.config.google_tracking_id);
-      }
     }
   });
 
