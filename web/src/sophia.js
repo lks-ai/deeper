@@ -967,6 +967,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return r;
   }
 
+  sophia.submit = function(prompt){
+    sophia.send(hierarchyEditor.getCurrentNode().id, prompt, true)
+  }
+
   sophia.send = function(nodeId, prompt, createChild=false, label=null) {
     // Working data
     let targetNode = null;

@@ -1,0 +1,11 @@
+# Respond
+Respond to the request. Use markdown formatting and put any important subtopics or proper nouns in bold. Reply in html with embedded css and javascript within the <reply> and </reply> tags, which will act as the container element for whatever elements you write.
+
+<reply>
+{response(1024, 0.0)}
+
+</reply>
+
+## Label this Knowledge
+Final Step. Based on the request and the reply, come up with a short yet specific label for this knowledge. keep it to below 5 words:
+- Knowledge Label: {label(8, 0.0)}
