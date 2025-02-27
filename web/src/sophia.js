@@ -586,7 +586,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   sophia.client.on("create", (msg) => {
     console.log("Create received", msg);
-    let parentNode = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.parentId);
+    let parentNode = hierarchyEditor.getNode(msg.parentId);
     if (parentNode){
       let targetNode = hierarchyEditor.createNode(msg.fields.name, parentNode, hierarchyEditor.getNodeType(msg.fields.type));
       targetNode = {...targetNode, ...msg.fields};
@@ -613,7 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Update received", msg);
     // get the node from the ID
     // get the update
-    let node = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.nodeId);
+    let node = hierarchyEditor.getNode(msg.nodeId);
     if (node){
       console.log(`node found: ${node.id}`);
       for (let key in msg.fields){
@@ -644,7 +644,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   sophia.client.on("delete", (msg) => {
     console.log("Delete received", msg);
-    let node = hierarchyEditor.findNodeById(hierarchyEditor.treeData, msg.nodeId);
+    let node = hierarchyEditor.getNode(msg.nodeId);
     if (node){
       hierarchyEditor.removeNodeFromTree(node, node.parent);
       hierarchyEditor.renderTop();
@@ -746,13 +746,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* Functional sophia client that edits structure */
 
-  sophia.formatContextEntry = function(node){
+  sophia.formatContextEntry = function(node, showHash=false){
     let user_name = hierarchyEditor.getConfigValue(node, 'user_name');
     let agent_name = hierarchyEditor.getConfigValue(node, 'agent_name');
+    const linkPart = showHash ? `, Link: #${node.id}`: '';
     if (node.metadata.hasOwnProperty('user_request')){
-      return `--- ${user_name}:\n${node.metadata.user_request || ""}\n\n--- ${agent_name}: ${node.name}\n${node.body}`;
+      return `--- ${user_name}:\n${node.metadata.user_request || ""}\n\n--- ${agent_name}: ${node.name}${linkPart}\n${node.body}`;
     }else{
-      return `--- Content: ${node.name}\n${node.body}`;
+      return `--- Content: ${node.name}${linkPart}\n${node.body}`;
     }
   }
 
@@ -761,7 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let uuids = extractHashLinksFromMarkdown(node.body);
     node.links = [];
     for (let i = 0; i < uuids.length; i++){
-      let n = hierarchyEditor.findNodeById(hierarchyEditor.treeData, uuids[i]);
+      let n = hierarchyEditor.getNode(uuids[i]);
       if (n) node.links.push(n);
     }
   }
@@ -777,13 +778,13 @@ document.addEventListener("DOMContentLoaded", () => {
   sophia.compileLinkRecall = function(node){
     // Gets a list of all links from a node body and compiles a 
     if (!node) return '';
-    let o = [];
+    let o = {};
 
     const results = extractHashLinksFromMarkdown(node.body);
     results.forEach((uuid) => {
-      let n = hierarchyEditor.findNodeById(hierarchyEditor.treeData, uuid);
+      let n = hierarchyEditor.getNode(uuid);
       if (n){
-        o.push(sophia.formatContextEntry(n));
+        o[uuid] = sophia.formatContextEntry(n, true);
       }
     });
     return o;
@@ -804,7 +805,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sophia.updateLinks(nodes[i]);
   }
 
-  sophia.mutualizeLinks = function(node, depthAncestors=2, depthAunts=1, depthCousins=0){
+  sophia.mutualizeLinks = function(node, depthAncestors=2, depthAunts=1, depthCousins=0, depthChildren=0, depthNieces=0){
       // Perform peer and ancestor rewrites using the targetNode.metadata.tag to make them link here.
       // start with any ancestors `depthAncestors` generations back
       const ancestors = hierarchyEditor.getAncestors(node, depthAncestors);
@@ -842,20 +843,42 @@ document.addEventListener("DOMContentLoaded", () => {
       }
   }
 
-  sophia.compileContext = function(config, maxLevels=5, onChild=false){
+  sophia.compileContext = function(config, maxLevels=5, onChild=false, recallDepth=3){
     let l = hierarchyEditor.currentFocusPath;
+    const ids = l.map(({id})=>id);
     let n = l.length < maxLevels ? l.length: maxLevels;
     let off = l.length - n;
     let last = l[l.length - 1];
     if (!onChild) n--; // omit current entry if it is an update
     // if (n <= 0) return "";
     let o = [];
-    o.push('## Conversation History')
+    let hist = [];
+    let links = {};
     // Compile the history by entry from [off - n] to off - 1
     for (let i = 0; i < n; i++){
         let node = l[off + i];
-        o.push(sophia.formatContextEntry(node));
+        hist.push(sophia.formatContextEntry(node));
+        // Link based Recall: For last `recallDepth` nodes, get a unique set of nodes from links in those nodes
+        if (i > n - recallDepth){
+          let recall = sophia.compileLinkRecall(node);
+          for (const nodeId in recall){
+            if (!recall.hasOwnProperty(nodeId)) continue;
+            // console.log("comparison", nodeId, !(nodeId in links), nodeId != node.id, !ids.includes(nodeId));
+            if (!(nodeId in links) && nodeId != node.id && !ids.includes(nodeId)){
+              links[nodeId] = recall[nodeId];
+            }
+          }
+        }
     }
+    // console.log(links);
+    // Put history and links in o
+    if (Object.keys(links).length !== 0){
+      o.push('## Context Linked from History');
+      const linkContent = Object.values(links);
+      o = [...o, ...linkContent];
+    }
+    o.push('## Conversation History');
+    o = [...o, ...hist];
     // If we are updating, and body.length > 0 then include a block for rewriting the request
     let justStarting = n <= 0 && !sophia.dirty
     if (!onChild && last.body.length > 0 && !justStarting){
@@ -865,6 +888,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }else{
       o.push('## Current Request');
     }
+    // console.log(o);
     return o.join("\n\n") + "\n\n";
   }
 
@@ -1179,9 +1203,14 @@ document.addEventListener("DOMContentLoaded", () => {
     await sophia._loadFromHash();
     // Navigate the hierarchy to the new node by Id
     let parts = event.newURL.split('#', 2);
-    hierarchyEditor.navigateToNodeById(parts[1]);
+    let newHash = parts[1];
+    hierarchyEditor.navigateToNodeById(newHash);
+    dataLayer.push({
+      event: 'hashtagChange',
+      hashtag: newHash
+    });
     hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
-    sophia.sendUserNavigate(hierarchyEditor.findNodeById(hierarchyEditor.treeData, parts[1]));
+    sophia.sendUserNavigate(hierarchyEditor.getNode(parts[1]));
   });
 
   // Make sure they really want to leave

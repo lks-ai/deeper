@@ -792,6 +792,9 @@
             }
             return null;
         }
+        getNode(id) {
+            return this.findNodeById(this.treeData, id);
+        }
         _findPathToNode(node, id) {
             if (node.id === id) {
                 return [node];

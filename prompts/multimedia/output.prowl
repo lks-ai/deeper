@@ -1,9 +1,18 @@
 # Respond
-Respond to the request. Use markdown formatting and put any important subtopics or proper nouns in bold. Reply in html with embedded css and javascript within the <reply> and </reply> tags, which will act as the container element for whatever elements you write.
+Respond to the request. Reply in html with javascript within the `app-container` div tags, which will act as the container element for the app itself. Do not write any css
 
 <reply>
+```html
+<!DOCTYPE html>
+<head><title>App</title></head>
+<body>
+<div class="app-container">
 {response(1024, 0.0)}
 
+</div>
+</body>
+</html>
+```
 </reply>
 
 ## Label this Knowledge
