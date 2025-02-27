@@ -805,7 +805,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sophia.updateLinks(nodes[i]);
   }
 
-  sophia.mutualizeLinks = function(node, depthAncestors=2, depthAunts=1, depthCousins=0, depthChildren=0, depthNieces=0){
+  sophia.mutualizeLinks = function(node, linkedNodes=null, depthAncestors=2, depthAunts=1, depthCousins=0, depthChildren=0, depthNieces=0){
       // Perform peer and ancestor rewrites using the targetNode.metadata.tag to make them link here.
       // start with any ancestors `depthAncestors` generations back
       const ancestors = hierarchyEditor.getAncestors(node, depthAncestors);
@@ -826,11 +826,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       // Concat to all peers, ancestors and aunts
       let contexts = [...hierarchyEditor.getPeers(node, true), ...ancestors, ...aunts];
+      // Concat any added linked nodes
+      if (linkedNodes) contexts.push(...linkedNodes);
       // Encode node link in all contexts
       if (node.metadata.tag){
         let tag = node.metadata.tag;
         sophia.encodeLink(contexts, tag, node);
-        
       }
       // Reverse rewrite context nodes that came later than targetNode such that they point to target node
       for (let i = 0; i < contexts.length; i++){
@@ -852,12 +853,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!onChild) n--; // omit current entry if it is an update
     // if (n <= 0) return "";
     let o = [];
+    let allNodes = {};
     let hist = [];
     let links = {};
     // Compile the history by entry from [off - n] to off - 1
     for (let i = 0; i < n; i++){
         let node = l[off + i];
         hist.push(sophia.formatContextEntry(node));
+        allNodes[node.id] = node;
         // Link based Recall: For last `recallDepth` nodes, get a unique set of nodes from links in those nodes
         if (i > n - recallDepth){
           let recall = sophia.compileLinkRecall(node);
@@ -866,11 +869,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // console.log("comparison", nodeId, !(nodeId in links), nodeId != node.id, !ids.includes(nodeId));
             if (!(nodeId in links) && nodeId != node.id && !ids.includes(nodeId)){
               links[nodeId] = recall[nodeId];
+              allNodes[nodeId] = hierarchyEditor.getNode(nodeId);
             }
           }
         }
     }
-    // console.log(links);
+    console.log(links);
     // Put history and links in o
     if (Object.keys(links).length !== 0){
       o.push('## Context Linked from History');
@@ -889,7 +893,7 @@ document.addEventListener("DOMContentLoaded", () => {
       o.push('## Current Request');
     }
     // console.log(o);
-    return o.join("\n\n") + "\n\n";
+    return {content: o.join("\n\n") + "\n\n", nodes: allNodes};
   }
 
   sophia.compilePromptHistory = function(){
@@ -1004,10 +1008,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Set up prompt
     prompt = trim(prompt, ':*#,.-');
-    let history = sophia.compileContext(config, maxLevels=80, onChild=createChild);
+    const history = sophia.compileContext(config, maxLevels=80, onChild=createChild);
+    const refNodes = Object.values(history.nodes);
     sophia.promptHistory.push(prompt);
     const data = {
-      history: history,
+      history: history.content,
       prompt: prompt,
       //model: config.model,
       language: sophia.language,
@@ -1074,7 +1079,12 @@ document.addEventListener("DOMContentLoaded", () => {
       targetNode.body = result.response;
       sophia.sendUpdate(targetNode, {name: targetNode.name, body: targetNode.body, metadata: targetNode.metadata});
 
-      sophia.mutualizeLinks(targetNode);
+      sophia.mutualizeLinks(targetNode, refNodes);
+      
+      setTimeout(function(){
+        // Update links just a moment later to let the rewrite queue empty
+        sophia.updateLinks(targetNode);
+      }, 300);
 
       // Set the interface as "touched"
       sophia.dirty = true;
