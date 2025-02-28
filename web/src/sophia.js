@@ -859,7 +859,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Compile the history by entry from [off - n] to off - 1
     for (let i = 0; i < n; i++){
         let node = l[off + i];
-        if (!onChild && i < n - 1){
+        if (!onChild && i < n - 1 || onChild){
           hist.push(sophia.formatContextEntry(node));
         }
         allNodes[node.id] = node;
@@ -894,7 +894,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }else{
       o.push('## Current Request');
     }
-    // console.log(o);
+    console.log(o);
     return {content: o.join("\n\n") + "\n\n", nodes: allNodes};
   }
 
