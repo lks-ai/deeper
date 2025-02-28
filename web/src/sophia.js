@@ -850,7 +850,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let n = l.length < maxLevels ? l.length: maxLevels;
     let off = l.length - n;
     let last = l[l.length - 1];
-    if (!onChild) n--; // omit current entry if it is an update
+    //if (!onChild) n--; // omit current entry if it is an update
     // if (n <= 0) return "";
     let o = [];
     let allNodes = {};
@@ -859,7 +859,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Compile the history by entry from [off - n] to off - 1
     for (let i = 0; i < n; i++){
         let node = l[off + i];
-        hist.push(sophia.formatContextEntry(node));
+        if (!onChild && i < n - 1){
+          hist.push(sophia.formatContextEntry(node));
+        }
         allNodes[node.id] = node;
         // Link based Recall: For last `recallDepth` nodes, get a unique set of nodes from links in those nodes
         if (i > n - recallDepth){

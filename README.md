@@ -130,7 +130,7 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - ✅ Write config to the root node on save.
 - Multi-directional rewriting (based on children/peers).
 - Automated branch editing (simple and content-based rewriting).
-- Link-based RAG (LRAG?) for context recall.
+- ✅ Link-based RAG (LRAG?) for context recall.
 - Reverse rewrites on peers (asynchronous editing).
 - Branch Traversal for branch templates
 - Filtered path search for agents (only return nodes of condition)
