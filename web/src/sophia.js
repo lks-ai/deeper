@@ -1218,8 +1218,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let newHash = parts[1];
     hierarchyEditor.navigateToNodeById(newHash);
     dataLayer.push({
-      event: 'hashtagChange',
-      hashtag: newHash
+      event: 'hashChange',
+      hash: newHash
     });
     hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
     sophia.sendUserNavigate(hierarchyEditor.getNode(parts[1]));
