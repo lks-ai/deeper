@@ -8,6 +8,17 @@ models = [
     'mistralai/mixtral-8x7b-instruct',
 ]
 
+def fix_markdown_bold(md_text: str) -> str:
+    """
+    Fix markdown list items where the colon is mistakenly inside the bold markers.
+    Example:
+      Input:  "- **First Item:** Lorem ipsum dolor"
+      Output: "- **First Item**: Lorem ipsum dolor"
+    """
+    # This regex looks for a pattern: **text:** and replaces it with **text**:
+    fixed_text = re.sub(r'(\*\*[^*]+):(\*\*)', r'\1\2:', md_text)
+    return fixed_text
+
 # util for main
 def remove_list_blank_lines(markdown_text: str) -> str:
     """
@@ -88,7 +99,7 @@ async def think(prompt:str, model=None, agent=None, language='English'):
         d['thought'] = "\n".join([v['value'] for v in thoughts])
         r:prowl.Return = await stack.run(['output'], prefix=r.completion, model=model, inputs={'language': language}, stops=['</reply>'])
         d.update(r.get())
-        d['response'] = remove_list_blank_lines(d['response'])
+        d['response'] = remove_list_blank_lines(fix_markdown_bold(d['response']))
         return d
     except Exception as e:
         print(e)
