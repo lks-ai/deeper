@@ -40,7 +40,11 @@
     "Phi": "Φ", "Psi": "Ψ", "Omega": "Ω",
     "cdot": "⋅", "times": "×",
     "log": "log", "sum": "∑", "min": "min", "max": "max",
-    "hbar": "ℏ", "apos": "’", "top": "⊤"
+    "hbar": "ℏ", "apos": "’", "top": "⊤",
+    "to": "→",
+    "infty": "∞",
+    "infinity": "∞", // optional alias if you expect \infinity too
+    "ldots": "…"
   };
 
   /////////////////
