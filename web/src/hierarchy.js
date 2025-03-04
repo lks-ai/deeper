@@ -1036,6 +1036,18 @@
 
     document.addEventListener("DOMContentLoaded", function() {
         const nodeEditor = document.getElementById("nodeEditor");
+
+        window.addEventListener('keyup', function(event) {
+            // Check if the left arrow key is pressed
+            if (event.key === 'ArrowLeft') {
+                window.hierarchyEditor.navigateLeft();
+            }else if (event.key === 'ArrowRight') {
+                window.hierarchyEditor.navigateRight();
+            }
+        });
+      
+
+        // Touch events
         let touchStartX = 0;
         let touchStartY = 0;
         let touchEndX = 0;
@@ -1061,7 +1073,7 @@
           touchEndTime = Date.now();
           handleGesture();
         }, false);
-      
+
         // Determine swipe direction and call appropriate navigation function
         function handleGesture() {
             const deltaX = touchEndX - touchStartX;
