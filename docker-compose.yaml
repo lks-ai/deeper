@@ -9,5 +9,6 @@ services:
       - ./data:/app/data
       - ./web:/app/web
       - ./prompts:/app/prompts
+      - /usr/local/bin/pandoc:/usr/local/bin/pandoc:ro
     env_file:
       - .env

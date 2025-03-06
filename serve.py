@@ -156,10 +156,7 @@ async def download_docx(request: DownloadRequest, background_tasks: BackgroundTa
 
     # Call your conversion function with the output file path.
     # This assumes convert_text supports an 'outputfile' parameter.
-    try:
-        docx_content = convert_text(content, 'docx', format='md', outputfile=tmp_path, extra_args=['--reference-doc=doc/template.docx'])
-    except:
-        download_pandoc()
+    docx_content = convert_text(content, 'docx', format='md', outputfile=tmp_path, extra_args=['--reference-doc=doc/template.docx'])
 
     # Schedule the temporary file for deletion after response is sent.
     background_tasks.add_task(os.remove, tmp_path)
