@@ -137,6 +137,36 @@ async def load_endpoint(name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from pypandoc import convert_text
+import tempfile
+from fastapi import BackgroundTasks
+from fastapi.responses import FileResponse
+
+class DownloadRequest(BaseModel):
+    name:str
+    markdown:str
+
+@app.post("/download")
+async def download_docx(request: DownloadRequest, background_tasks: BackgroundTasks):
+    content = request.markdown
+    # Create a temporary file for the DOCX output.
+    with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as tmp:
+        tmp_path = tmp.name
+
+    # Call your conversion function with the output file path.
+    # This assumes convert_text supports an 'outputfile' parameter.
+    docx_content = convert_text(content, 'docx', format='md', outputfile=tmp_path, extra_args=['--reference-doc=doc/template.docx'])
+
+    # Schedule the temporary file for deletion after response is sent.
+    background_tasks.add_task(os.remove, tmp_path)
+
+    # Return the file as a download.
+    return FileResponse(
+        tmp_path,
+        filename=f"{request.name}.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    
 # Websockets endpoint
 import yaml
     

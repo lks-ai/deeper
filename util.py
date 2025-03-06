@@ -8,6 +8,8 @@ models = [
     'mistralai/mixtral-8x7b-instruct',
 ]
 
+# util for main
+
 def fix_markdown_bold(md_text: str) -> str:
     """
     Fix markdown list items where the colon is mistakenly inside the bold markers.
@@ -19,7 +21,6 @@ def fix_markdown_bold(md_text: str) -> str:
     fixed_text = re.sub(r'(\*\*[^*]+):(\*\*)', r'\1\2:', md_text)
     return fixed_text
 
-# util for main
 def remove_list_blank_lines(markdown_text: str) -> str:
     """
     Removes blank lines that occur between Markdown list items,

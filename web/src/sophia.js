@@ -181,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div>
                 <button onclick="sophia.download(document.getElementById('save-name').value); hideModal();" title="Saves currently selected branch as a tree">Download Branch</button> &nbsp;
                 <button onclick="sophia.download(document.getElementById('save-name').value, true); hideModal();" title="Saves entire tree">Download Root</button>
+                <button onclick="sophia.downloadDocument(); hideModal();" title="Download">Download As Document</button>
               </div>
             </li>
             <li>
@@ -1172,6 +1173,47 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   };
 
+  sophia.downloadDocument = function() {
+    // Use the tree's name as the filename.
+    const name = hierarchyEditor.treeData.name;
+    let markdown = "";
+    // Use proper template literals to interpolate node.body.
+    sophia.traverseBranch(hierarchyEditor.treeData, function(node) {
+      markdown += `\r\n\r\n${node.body}`;
+    });
+    markdown = markdown.trim();
+  
+    // Prepare the request data using the expected keys: "name" and "markdown".
+    const data = { name: name, markdown: markdown };
+  
+    fetch(`${HOST}/download`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+      // Process the response as a blob.
+      .then(response => response.blob())
+      .then(blob => {
+        // Create a temporary URL for the blob.
+        const url = window.URL.createObjectURL(blob);
+        // Create an invisible link, set its href to the blob URL, and trigger a click.
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = `${name}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        // Clean up.
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(error => {
+        console.error(`Error downloading document: ${error}`);
+      });
+  };
+  
   // TODO RHEmbed hybrid search
 
   // sophia.query = function(queryText, topN) {

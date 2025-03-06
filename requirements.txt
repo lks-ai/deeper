@@ -4,3 +4,4 @@ uvicorn[standard]
 pydantic
 PyYAML
 PyJWT
+pypandoc
