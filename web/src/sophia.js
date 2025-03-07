@@ -285,6 +285,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Register a hook for when the edit form is submitted.
   window.hierarchyEditor.on("editFormSubmitted", (data) => {
     console.log("Edit form submitted for:", data.node);
+    sophia.mutualizeLinks(data.node);
+    sophia.updateLinks(data.node);
     sophia.sendUpdate(data.node, {name: data.node.name, body: data.node.body, metadata: data.node.metadata});
   });
 
@@ -1179,6 +1181,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let markdown = "";
     // Use proper template literals to interpolate node.body.
     sophia.traverseBranch(hierarchyEditor.treeData, function(node) {
+      markdown += `\r\n\r\n## ${node.name} {#${node.id}}`;
       markdown += `\r\n\r\n${node.body}`;
     });
     markdown = markdown.trim();
