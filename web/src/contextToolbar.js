@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
           callback: function(label) {
             console.log(`${label} was used in callback`);
             hierarchyEditor.getCurrentNode().body = hierarchyEditor.getCurrentNode().body.replace(label,`**${label}**`);
-            sophia.send(hierarchyEditor.getCurrentNode().id, label, createChild=true, label=label);
+            sophia.send(null, label, createChild=true, label=label);
           }
         }
         // More buttons can be added, e.g.:
