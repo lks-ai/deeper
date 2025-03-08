@@ -198,13 +198,17 @@
             if (!targetParent) return;
             // Clone the clipboard branch and assign new IDs.
             let newBranch = this._cloneBranch(this.clipboard, true, targetParent);
+            // Trigger the paste with ref to clipboard
+            const oldBranch = this.clipboard;
+            let data = {parent: targetParent, newBranch: newBranch, oldBranch: oldBranch};
+            this.triggerHook("branchPasted", data);
+            // Push to parent node
             targetParent.children.push(newBranch);
             // If it was a cut operation, clear the clipboard.
             if (this.clipboardAction === "cut") {
                 this.clipboard = null;
                 this.clipboardAction = null;
             }
-            this.triggerHook("branchPasted", { targetParent, newBranch });
             this.render();
         }
         _cloneBranch(node, assignNewIds, newParent = null) {

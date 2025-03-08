@@ -126,6 +126,10 @@ function extractHashLinksFromMarkdown(markdownText) {
   return uuids;
 }
 
+function replaceHashMarkdownLinks(markdownText) {
+  return markdownText.replace(/\[([^\]]+)\]\(#([^)]+)\)/g, '**$1**');
+}
+
 function extractTextFromHtml(htmlString) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlString, 'text/html');
@@ -764,6 +768,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Branch traversal with callback, helps for batch transforms/generation/etc.
+  sophia.traverseBranch = function(node, callback) {
+    if (!node) return;
+    callback(node);
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => sophia.traverseBranch(child, callback));
+    }
+  }
+  
+  // Linking and content linking
+
   sophia.updateLinks = function(node){
     // synchronizes the links from the node's body into a "links" field in nodes
     let uuids = extractHashLinksFromMarkdown(node.body);
@@ -774,14 +789,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  sophia.traverseBranch = function(node, callback) {
-    if (!node) return;
-    callback(node);
-    if (node.children && node.children.length > 0) {
-      node.children.forEach(child => sophia.traverseBranch(child, callback));
-    }
-  }
-  
   sophia.compileLinkRecall = function(node){
     // Gets a list of all links from a node body and compiles a 
     if (!node) return '';
@@ -811,6 +818,48 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < nodes.length; i++)
       sophia.updateLinks(nodes[i]);
   }
+
+  sophia.unlink = function(node){
+    // Unlink linked nodes in content
+    node.body = extractHashLinksFromMarkdown(node.body);
+    sophia.updateLinks(node);
+  }
+
+  sophia.relink = function(nodes, oldNode, newNode){
+    // Takes the oldId and the newId performs rewrite on the nodes array input
+    for (let i = 0; i < nodes.length; i++){
+      let node = nodes[i];
+      node.body.replace(`[${oldNode.metadata.tag}](#${oldNode.id})`, `[${newNode.metadata.tag}](#${newNode.id})`);
+    }
+    // update the links (for visualization and graph functionalities)
+    // for (let i = 0; i < nodes.length; i++)
+    //   sophia.updateLinks(nodes[i]);
+  }
+
+  hierarchyEditor.on('branchPasted', (data) => {
+    console.log(data);
+    let parent = data.parent;
+    let newBranch = data.newBranch;
+    let oldBranch = data.oldBranch;
+    console.log("Branch Pasted", oldBranch.id);
+    let nodes = [parent];
+    // on each node in the newBranch, it needs to rewrite any references to ids from oldBranch
+    // push nodes to flat indexed arrays (given that newBranch and oldBranch are structured exactly the same)
+    let nb = [];
+    let ob = [];
+    sophia.traverseBranch(newBranch, function(node){
+      nb.push(node);
+    });
+    sophia.traverseBranch(oldBranch, function(node){
+      ob.push(node);
+    });
+    // directly relink new node contents from old links to new links
+    for (let i = 0; i < nb.length; i++){
+      let nn = nb[i];
+      let no = ob[i];
+      sophia.relink([nn], no, nn);
+    }
+  });
 
   sophia.mutualizeLinks = function(node, linkedNodes=null, depthAncestors=2, depthAunts=1, depthCousins=0, depthChildren=0, depthNieces=0){
       // Perform peer and ancestor rewrites using the targetNode.metadata.tag to make them link here.
@@ -1009,6 +1058,11 @@ document.addEventListener("DOMContentLoaded", () => {
     sophia.send(null, prompt, true);
   }
 
+  sophia.addPromptHistory = function(prompt){
+    sophia.promptHistory = sophia.promptHistory.filter(item => item !== prompt);
+    sophia.promptHistory.push(prompt);
+  }
+
   sophia.send = function(node, prompt, createChild=false, label=null) {
     // Working data
     let targetNode = null;
@@ -1037,7 +1091,7 @@ document.addEventListener("DOMContentLoaded", () => {
     prompt = trim(prompt, ':*#,.-');
     const history = sophia.compileContext(targetNode, config, maxLevels=80, onChild=createChild);
     const refNodes = Object.values(history.nodes);
-    sophia.promptHistory.push(prompt);
+    sophia.addPromptHistory(prompt);
     const data = {
       history: history.content,
       prompt: prompt,
