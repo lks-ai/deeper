@@ -89,3 +89,18 @@
     border: 1px dashed red;
     padding: 0 0.2em;
 }
+
+.fatex-dot {
+  position: relative;
+  display: inline-block;
+}
+
+.fatex-dot::after {
+  content: "·";  /* Unicode middle dot */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -0.6em;  /* Adjust as needed for your font sizes */
+  font-size: 0.7em; /* Slightly smaller than the base */
+  line-height: 1;
+}

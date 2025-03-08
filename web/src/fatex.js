@@ -44,7 +44,12 @@
     "to": "→",
     "infty": "∞",
     "infinity": "∞", // optional alias if you expect \infinity too
-    "ldots": "…"
+    "ldots": "…",
+    "partial": "∂",
+    "begin": "", "end": "",
+    "int": "∫",
+    "rangle": "⟩", "langle": "⟨",
+    "exp": "exp"
   };
 
   /////////////////
@@ -190,6 +195,18 @@
         }
         tokens.shift();
         node = { type: "accent", accent: "hat", base: base };
+      } else if (token.value === "dot") {
+        // Accent command for dot: expect an argument.
+        if (tokens.length === 0 || tokens[0].type !== "lbrace") {
+          throw new Error("Missing { after \\dot");
+        }
+        tokens.shift();
+        var base = parseExpression(tokens);
+        if (tokens.length === 0 || tokens[0].type !== "rbrace") {
+          throw new Error("Missing closing brace for \\dot");
+        }
+        tokens.shift();
+        node = { type: "accent", accent: "dot", base: base };
       } else {
         // For other commands, create a command node.
         node = { type: "command", value: token.value };
@@ -315,6 +332,10 @@
           html += '<span class="fatex-accent fatex-hat">' +
                     '<span class="fatex-accent-base">' + renderNode(node.base) + '</span>' +
                   '</span>';
+        } else if (node.accent === "dot") {
+          html += '<span class="fatex-accent fatex-dot">' +
+                    '<span class="fatex-accent-base">' + renderNode(node.base) + '</span>' +
+                  '</span>';        
         } else {
           html += '<span class="fatex-accent">' + renderNode(node.base) + '</span>';
         }

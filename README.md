@@ -128,7 +128,7 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - ✅ Enable text selection to trigger prompts.
 - Cross-branch linking (add select box for branches).
 - ✅ Write config to the root node on save.
-- Multi-directional rewriting (based on children/peers).
+- ✅ Multi-directional rewriting (based on children/peers).
 - Automated branch editing (simple and content-based rewriting).
 - ✅ Link-based RAG (LRAG?) for context recall.
 - Reverse rewrites on peers (asynchronous editing).
@@ -150,7 +150,7 @@ Below is a list of planned features and improvements. Checkmarks (✅) indicate 
 - ✅ User Accounts.
 - ✅ WebSockets for collaboration and background processing.
 - Add sockets buffer for "syncing from load" on a client who's late to the party
-- Pypandoc based Export (Tree -> Docx) and (Docx -> Tree)
+- ✅ Pypandoc based Export (Tree -> Docx) and (Docx -> Tree)**
 - Workspaces based storage for user colaboration and sharing
     - includes user permissions, visibility, etc. for each tree
 

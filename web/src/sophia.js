@@ -372,10 +372,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     div.innerHTML = `
     <textarea type="text" id="message-input" placeholder="Explain something or ask a question..." style="height: 7em;"></textarea>
-    <button id="send-btn" onclick="var e = document.getElementById('message-input'); window.sophia.send('` + currentNode.id + `', e.value); e.value='';">↻ Update</button>
+    <button id="send-btn" onclick="var e = document.getElementById('message-input'); window.sophia.send(null, e.value); e.value='';" title="Edit the current content with your Prompt">↻ Update</button>
     ${sophia.compilePromptHistory()}
-    <button id="send-child-btn" onclick="var e = document.getElementById('message-input'); window.sophia.send('` + currentNode.id + `', e.value, createChild=true); e.value='';" class="right">↳ Add</button>
+    <button id="send-child-btn" onclick="var e = document.getElementById('message-input'); window.sophia.send(null, e.value, createChild=true); e.value='';" class="right" title="Add more content (continue the conversation)">↳ Add</button>
     `;
+
+    if (currentNode.children.length > 0){
+      div.innerHTML += `<button id="send-traverse-btn" onclick="var e = document.getElementById('message-input'); window.sophia.traverseBranch(window.hierarchyEditor.getCurrentNode(), function(node){window.sophia.send(node, e.value)}); e.value='';" class="right" title="Prompt edits all children">↳ Branch Update</button>`;
+    }
 
     div.addEventListener('dragenter', function(event) {
       hovered(event);
@@ -423,7 +427,7 @@ document.addEventListener("DOMContentLoaded", () => {
       let node = hierarchyEditor.getCurrentNode();
       let cleanText = trim(extractTextFromHtml(text), '":\'').replace("'", "\\'");
       //text = trim(text, '":\'').replace("'", "\\'");
-      return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send('${node.id}', '${cleanText}', createChild=true, label='${cleanText}');"><strong>${text}</strong></a>`;
+      return `<a href="javascript:void(0)" onclick=" oneUpEffect(this); window.sophia.send(null, '${cleanText}', createChild=true, label='${cleanText}');"><strong>${text}</strong></a>`;
     },
     // boldPrefix: '<a href="#" on>',
     // boldSuffix: '</a>'
@@ -847,8 +851,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
   }
 
-  sophia.compileContext = function(config, maxLevels=5, onChild=false, recallDepth=3){
-    let l = hierarchyEditor.currentFocusPath;
+  sophia.compileContext = function(node, config, maxLevels=5, onChild=false, recallDepth=3){
+    // Get path of nodes from root
+    let l = hierarchyEditor._findPathToNode(hierarchyEditor.treeData, node.id); //hierarchyEditor.currentFocusPath;
     const ids = l.map(({id})=>id);
     let n = l.length < maxLevels ? l.length: maxLevels;
     let off = l.length - n;
@@ -1001,28 +1006,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   sophia.submit = function(prompt){
-    sophia.send(hierarchyEditor.getCurrentNode().id, prompt, true)
+    sophia.send(null, prompt, true);
   }
 
-  sophia.send = function(nodeId, prompt, createChild=false, label=null) {
+  sophia.send = function(node, prompt, createChild=false, label=null) {
     // Working data
     let targetNode = null;
-    let parentNode = hierarchyEditor.getCurrentNode();
+    let parentNode = node || hierarchyEditor.getCurrentNode();
     let config = hierarchyEditor.getCurrentConfig();
     const newNodeType = config.node_type || parentNode.type || nodeTypes[0];
-
-    // Set up prompt
-    prompt = trim(prompt, ':*#,.-');
-    const history = sophia.compileContext(config, maxLevels=80, onChild=createChild);
-    const refNodes = Object.values(history.nodes);
-    sophia.promptHistory.push(prompt);
-    const data = {
-      history: history.content,
-      prompt: prompt,
-      //model: config.model,
-      language: sophia.language,
-      agent: config.agent,
-    };
 
     // Pre-fetch interface setup
     if (!createChild){
@@ -1040,7 +1032,20 @@ document.addEventListener("DOMContentLoaded", () => {
       // sophia.sendCreate(targetNode);
     }
     let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
-    
+
+    // Set up prompt
+    prompt = trim(prompt, ':*#,.-');
+    const history = sophia.compileContext(targetNode, config, maxLevels=80, onChild=createChild);
+    const refNodes = Object.values(history.nodes);
+    sophia.promptHistory.push(prompt);
+    const data = {
+      history: history.content,
+      prompt: prompt,
+      //model: config.model,
+      language: sophia.language,
+      agent: config.agent,
+    };
+
     // Include any agent config which was set in Node options
     let acfg = sophia.getAgentConfig(); // get once
     if (acfg){
@@ -1175,16 +1180,43 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   };
 
+  sophia.compileMarkdown = function(rootNode) {
+    let markdown = "";
+    sophia.traverseBranch(rootNode, function(node) {
+      // Ensure node.body is a string.
+      let body = (node.body || "").trim();
+      // Normalize newlines to CRLF.
+      body = body.replace(/(?<!\r)\n/g, "\r\n");
+      let partTitle = "";
+      let partBody = "";
+      
+      if (body.length === 0) {
+        // No content: just add a header.
+        partTitle = `\r\n\r\n## ${node.name} {#${node.id}}`;
+      } else if (!body.startsWith("#")) {
+        // Body doesn't start with a header: insert one.
+        partTitle = `\r\n\r\n## ${node.name} {#${node.id}}`;
+        partBody = `\r\n\r\n${body}`;
+      } else {
+        // Body starts with a header. Split into lines.
+        const lines = body.split("\r\n");
+        let headerLine = lines[0];
+        // If the header doesn't already include an anchor, append it.
+        if (!/\{\#.*?\}/.test(headerLine)) {
+          headerLine += ` {#${node.id}}`;
+        }
+        lines[0] = headerLine;
+        partBody = "\r\n\r\n" + lines.join("\r\n");
+      }
+      markdown += partTitle + partBody;
+    });
+    return markdown.trim();
+  };
+  
   sophia.downloadDocument = function() {
     // Use the tree's name as the filename.
     const name = hierarchyEditor.treeData.name;
-    let markdown = "";
-    // Use proper template literals to interpolate node.body.
-    sophia.traverseBranch(hierarchyEditor.treeData, function(node) {
-      markdown += `\r\n\r\n## ${node.name} {#${node.id}}`;
-      markdown += `\r\n\r\n${node.body}`;
-    });
-    markdown = markdown.trim();
+    let markdown = sophia.compileMarkdown(hierarchyEditor.treeData);
   
     // Prepare the request data using the expected keys: "name" and "markdown".
     const data = { name: name, markdown: markdown };
