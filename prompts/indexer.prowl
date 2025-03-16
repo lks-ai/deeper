@@ -23,10 +23,8 @@ END TEXT
 - All line numbers should be sequential
 - Only output the outline contents after the outline tag
 
-## Examples
-
-### Example 1: Starting an Outline
-This example shows how the outline should be formatted from the beginning:
+## Example Partial Outline Format
+This example shows how the outline should be formatted:
 
 <outline>
 - Document Title: 1
@@ -52,9 +50,6 @@ This example shows how the outline should be formatted from the beginning:
           - Yet some more Content: 179
   ...
 </outline>
-
-### Example 2: Continuing an Outline
-This example shows how to continue when the 
 
 ## Create the Outline
 {instruction}:
