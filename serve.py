@@ -168,6 +168,68 @@ async def download_docx(request: DownloadRequest, background_tasks: BackgroundTa
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
     
+# Upload
+from fastapi import UploadFile, File, Form
+from fastapi.responses import JSONResponse
+#from docx import Document  # if you want to process docx files
+
+
+class UploadMetadata(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+@app.post("/upload")
+async def upload_endpoint(
+    name: str = Form(...),
+    description: str = Form(None),
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None
+):
+    
+    from test_doc import doc2tree
+    tree = None
+    metadata = UploadMetadata(name=name, description=description)
+    file_content = await file.read()
+
+    # Determine action based on MIME type.
+    if file.content_type.startswith("image/"):
+        action = "Processed as image"
+        # e.g., save the image to a folder
+        # filename = f"images/{file.filename}"
+        # with open(filename, "wb") as f:
+        #     f.write(file_content)
+    elif file.content_type in ["text/markdown", "text/plain"]:
+        action = "Processed as text"
+    elif file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        action = "Processed as DOCX"
+        # For DOCX, you could, for example, load it with python-docx:
+        try:
+            # Optionally, process the DOCX file. Here we create a Document instance.
+            tf = tempfile.NamedTemporaryFile(delete=True, suffix=".docx").name
+            print(tf)
+            tree = await doc2tree('data/test2.docx', name)
+            #doc = Document(tempfile.NamedTemporaryFile(delete=False, suffix=".docx").name)
+            # (Alternatively, save the file_content to a temp file and load it.)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error processing DOCX: {e}")
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+
+    snippet = file_content.decode("utf-8")[:100] if file.content_type.startswith("text") else None
+
+    # Return a JSON response with details.
+    return JSONResponse({
+        "success": True,
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "metadata": metadata.model_dump(),
+        "action": action,
+        # Optionally, return a snippet for text files
+        "snippet": snippet,
+        "tree": tree,
+    })
+    
+
 # Websockets endpoint
 import yaml
     

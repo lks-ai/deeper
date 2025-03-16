@@ -382,7 +382,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     if (currentNode.children.length > 0){
-      div.innerHTML += `<button id="send-traverse-btn" onclick="var e = document.getElementById('message-input'); window.sophia.traverseBranch(window.hierarchyEditor.getCurrentNode(), function(node){window.sophia.send(node, e.value)}); e.value='';" class="right" title="Prompt edits all children">↳ Branch Update</button>`;
+      div.innerHTML += `<button id="send-traverse-btn" onclick="var e = document.getElementById('message-input'); window.sophia.traverseBranchByLevel(window.hierarchyEditor.getCurrentNode(), async function(node){await window.sophia.send(node, e.value)}); e.value='';" class="right" title="Prompt edits all children">↳ Branch Update</button>`;
     }
 
     div.addEventListener('dragenter', function(event) {
@@ -776,6 +776,28 @@ document.addEventListener("DOMContentLoaded", () => {
       node.children.forEach(child => sophia.traverseBranch(child, callback));
     }
   }
+
+  // Async version of branch traversal with inter-generational blocking (requires parents to be complete)
+  sophia.traverseBranchByLevel = async function(rootNode, callback) {
+    if (!rootNode) return;
+    // Start at level 0 with the root node.
+    let currentLevel = [rootNode];
+    while (currentLevel.length > 0) {
+      // Process all nodes in the current level in parallel.
+      await Promise.all(currentLevel.map(node => callback(node)));
+      // Collect all children for the next level.
+      let nextLevel = [];
+      currentLevel.forEach(node => {
+        if (node.children && node.children.length > 0) {
+          nextLevel.push(...node.children);
+        }
+      });
+      // Block until all callbacks for the current level are complete,
+      // then move to the next level.
+      currentLevel = nextLevel;
+    }
+  };
+  
   
   // Linking and content linking
 
@@ -1063,22 +1085,21 @@ document.addEventListener("DOMContentLoaded", () => {
     sophia.promptHistory.push(prompt);
   }
 
-  sophia.send = function(node, prompt, createChild=false, label=null) {
+  sophia.send = async function(node, prompt, createChild = false, label = null) {
     // Working data
     let targetNode = null;
     let parentNode = node || hierarchyEditor.getCurrentNode();
     let config = hierarchyEditor.getCurrentConfig();
     const newNodeType = config.node_type || parentNode.type || nodeTypes[0];
-
+  
     // Pre-fetch interface setup
-    if (!createChild){
+    if (!createChild) {
       targetNode = parentNode;
-      targetNode.name = "Thinking...";
-      sophia.sendUpdate(targetNode, {name: targetNode.name});
-    }else{
+      sophia.sendUpdate(targetNode, { name: targetNode.name });
+    } else {
       targetNode = hierarchyEditor.createNode("Thinking...", parentNode, hierarchyEditor.getNodeType(newNodeType), true);
       parentNode.children.push(targetNode);
-      // Using targetNode, replace the original **bold** with a markdown link to the node.id from the original node
+      // Replace bold text with a markdown link if label is provided
       if (label) {
         targetNode.metadata.tag = trim(label, ':*#,.-');
         sophia.encodeLink([parentNode], label, targetNode);
@@ -1086,86 +1107,89 @@ document.addEventListener("DOMContentLoaded", () => {
       // sophia.sendCreate(targetNode);
     }
     let typeData = hierarchyEditor.getNodeType(targetNode.type) || { label: "Node" };
-
+  
     // Set up prompt
     prompt = trim(prompt, ':*#,.-');
-    const history = sophia.compileContext(targetNode, config, maxLevels=80, onChild=createChild);
+    const history = sophia.compileContext(targetNode, config, 80, createChild);
     const refNodes = Object.values(history.nodes);
     sophia.addPromptHistory(prompt);
     const data = {
       history: history.content,
       prompt: prompt,
-      //model: config.model,
+      // model: config.model,
       language: sophia.language,
       agent: config.agent,
     };
-
+    targetNode.name = "Thinking...";
+  
     // Include any agent config which was set in Node options
     let acfg = sophia.getAgentConfig(); // get once
-    if (acfg){
+    if (acfg) {
       targetNode.config = acfg;
       data.agent = acfg.agent;
-      sophia.sendUpdate(targetNode, {config: targetNode.config});
+      sophia.sendUpdate(targetNode, { config: targetNode.config });
     }
-
+  
+    // Update the interface immediately
     setTimeout(function(){
-        hierarchyEditor.render();
-        hierarchyEditor.breadcrumbRow.scrollBy(10024, 0);
-        hierarchyEditor.childrenRow.scrollBy(10024, 0);
-      }, 0);
-
-    // Perform the fetch
-    fetch(`${HOST}/think`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-    .then(response => response.json())
-    .then(result => {
+      hierarchyEditor.render();
+      hierarchyEditor.breadcrumbRow.scrollBy(10024, 0);
+      hierarchyEditor.childrenRow.scrollBy(10024, 0);
+    }, 0);
+  
+    try {
+      // Await the fetch call
+      const response = await fetch(`${HOST}/think`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+  
       // Change the interface accordingly after receiving result
-      var response = result.response;
-      var thoughts = result.thought;
-      var request = result.user_request;
-      
+      const responseText = result.response;
+      const thoughts = result.thought;
+      const requestText = result.user_request;
+  
       // Update metadata
       delete result['user_request'];
-      targetNode.metadata = {...targetNode.metadata, ...result};
-      if (createChild || targetNode.metadata['user_request'] === 'undefined'){
+      targetNode.metadata = { ...targetNode.metadata, ...result };
+      if (createChild || targetNode.metadata['user_request'] === 'undefined') {
         // if creating a child, just set user_request to the prompt
         targetNode.metadata.user_request = prompt;
       }
-      
+  
       // Set other fields
-      let cleanName = result.label.replace('Knowledge Label:', '')
+      let cleanName = result.label.replace('Knowledge Label:', '');
       targetNode.name = trim(cleanName, '- ');
-      targetNode.body = result.response;
-      sophia.sendUpdate(targetNode, {name: targetNode.name, body: targetNode.body, metadata: targetNode.metadata});
-
+      targetNode.body = responseText;
+      sophia.sendUpdate(targetNode, { name: targetNode.name, body: targetNode.body, metadata: targetNode.metadata });
+  
       sophia.mutualizeLinks(targetNode, refNodes);
-      
+  
+      // Update links just a moment later to let the rewrite queue empty
       setTimeout(function(){
-        // Update links just a moment later to let the rewrite queue empty
         sophia.updateLinks(targetNode);
       }, 300);
-
-      // Set the interface as "touched"
+  
+      // Mark the interface as "touched"
       sophia.dirty = true;
-
-      // Asynchronously make the interface do stuff
+  
+      // Asynchronously update the UI
       setTimeout(function(){
-        hierarchyEditor.render(from=targetNode);
+        hierarchyEditor.render(targetNode);
         hierarchyEditor.breadcrumbRow.scrollBy(1024, 0);
         hierarchyEditor.childrenRow.scrollBy(1024, 0);
       }, 0);
-      if (targetNode == hierarchyEditor.getCurrentNode()) window.scrollTo(0, 0);
-    })
-    .catch(error => {
-      console.log(`Error: ${error}`);
-    });
-  }
-
+  
+      if (targetNode === hierarchyEditor.getCurrentNode()) window.scrollTo(0, 0);
+    } catch (error) {
+      console.error(`Error: ${error}`);
+    }
+  };
+  
   sophia.saveData = function(name, globalScope=false){
     if (name.length == 0) return;
     sophia.treeName = name;

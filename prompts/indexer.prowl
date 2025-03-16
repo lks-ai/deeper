@@ -1,0 +1,64 @@
+# Table of Contents
+Read the following long form text and create a fully nested table of contents which organizes the text such that each leaf of the outline is a smaller chunk of text no longer than 600 words or so.
+
+---
+START TEXT
+---
+
+{text}
+
+---
+END TEXT
+---
+
+## Outlining Instructions
+- only reply with the outline after the outline tag
+- Use a nested bullet list format
+- Only one entry per section any sub sections should be nested
+- There should be only one entry in the first nested level because all subsequent entries would be nested somewhere within that
+- The depth of the tree at any point should adjust so that the number of lines in each entry would be within the same order of magnitude as the rest
+- Give a Title to each entry, it could be based on headers and formatting from the text, or the best fit title
+- For each entry in the outline use the format - title: line_number
+- line_number represents the line number each entry in the outline begins at
+- All line numbers should be sequential
+- Only output the outline contents after the outline tag
+
+## Examples
+
+### Example 1: Starting an Outline
+This example shows how the outline should be formatted from the beginning:
+
+<outline>
+- Document Title: 1
+  - First Header: 1
+    - A subsection of the first header: 1
+    - An even more detailed subsection: 8
+    - Another detailed subsection: 16
+      - An even Deeper Subsection: 16
+      - It's continuation of a slightly different subject: 27
+      - Yet more Detail: 49
+      - This is a longer section: 68
+  - Second Main Section: 85
+    - More Detail on the Second Main Section: 85
+    - Other descriptive titles: 97
+  - Third Section: 104
+    - Third Section's First Child: 106
+    - Second Child of Third: 125
+    - Third of Third: 142
+      - This section has a lot of detail: 144
+        - This goes deeper: 144
+        - And wider: 157
+          - And Deeper: 157
+          - Yet some more Content: 179
+  ...
+</outline>
+
+### Example 2: Continuing an Outline
+This example shows how to continue when the 
+
+## Create the Outline
+{instruction}:
+
+{outline_text}
+{outline(2048, 0.0)}
+
